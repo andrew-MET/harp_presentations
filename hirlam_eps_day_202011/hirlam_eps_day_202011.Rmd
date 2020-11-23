@@ -1,0 +1,563 @@
+---
+title: "harp news... and some features you might not know about"
+author: "Andrew Singleton"
+date: "MET Norway"
+output: 
+  revealjs::revealjs_presentation:
+    theme: league
+    transition: fade
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, message = FALSE, warning = FALSE, dev.args = list(bg = "transparent"), collapse = TRUE,
+  fig.height = 5
+)
+
+library(harp)
+library(tidyr)
+library(dplyr)
+library(here)
+library(forcats)
+theme_presentation <- theme_set(theme_harp_midnight(base_size = 12))
+theme_presentation <- theme_update(
+    panel.background  = element_rect(fill = "transparent"), 
+    plot.background   = element_rect(fill = "transparent"), 
+    legend.background = element_rect(fill = "transparent"), 
+    legend.key        = element_rect(fill = "transparent")
+  )
+```
+
+<style>
+  .reveal h1, .reveal h2, .reveal h3, .reveal h4, .reveal h5, .reveal h6 {text-transform:none;}
+  .reveal section img { background:none; border:none; box-shadow:none; }
+  .reveal table { border-width:0px; }
+  .reveal table td { bordoer-width:0px; }
+  .reveal pre code {background:#222;}
+  .reveal pre {margin: 7px auto;}
+  code span.kw {color:yellow}
+  code span.dt {color: tomato}
+</style>
+
+## __New read function__
+`read_forecast()`
+```{r read-forecast-intro, echo = TRUE, eval = FALSE}
+read_forecast(
+  start_date,
+  end_date,
+  fcst_model,
+  parameter
+)
+```
+
+Replaces `read_eps_interpolate()` and `read_det_interpolate()`
+
+...and does a whole lot more!
+
+## __Default behaviour__
+_Read data "as is"_
+
+- For vfld, this means to just read the data
+- For gridded data, the gridded fields are returned
+
+## vfld
+
+```{r read-forecast-vfld-code, echo=TRUE, eval = FALSE}
+read_forecast(
+  start_date  = 2019021700,
+  end_date    = 2019021718,
+  fcst_model  = "AROME_Arctic_prod",
+  file_path   = system.file("vfld", package = "harpData"),
+  return_data = TRUE
+)
+```
+
+```{r read-forecast-vfld-res}
+read_forecast(
+  start_date  = 2019021700,
+  end_date    = 2019021718,
+  fcst_model  = "AROME_Arctic_prod",
+  lead_time   = seq(0, 3),
+  file_path   = system.file("vfld", package = "harpData"),
+  return_data = TRUE
+) %>% 
+  transmute(fcdate, lead_time, SID, parameter, AA_det = AROME_Arctic_prod_det)
+```
+
+## grib
+```{r read-forecast-grib-code, echo = TRUE, eval = FALSE}
+read_forecast(
+  2018071000,
+  2018071000,
+  "AROME_Arctic",
+  "T2m",
+  file_path     = system.file("grib/AROME_Arctic", package = "harpData"),
+  file_template = "harmonie_grib_fp",
+  return_data   = TRUE
+)
+```
+
+```{r read-forecast-grib-res}
+read_forecast(
+  2018071000,
+  2018071000,
+  "AROME_Arctic",
+  "T2m",
+  lead_time     = seq(0, 3),
+  file_path     = system.file("grib/AROME_Arctic", package = "harpData"),
+  file_template = "harmonie_grib_fp",
+  return_data   = TRUE
+) %>% 
+  transmute(fcdate, lead_time, parameter, AA_det = AROME_Arctic_det) %>% 
+  print(n = 7)
+```
+
+## Transformations
+
+- __interpolate__ : interpolate gridded data to points
+- __regrid__ : interpolate / reproject gridded data to a new grid
+- ___xsection___ _: extract a vertical cross section of the data_
+
+## `transformation = "interpolate"`
+
+```{r read-forecast-interpolate-code, echo = TRUE, eval = FALSE}
+read_forecast(
+    2018071000,
+    2018071000,
+    "AROME_Arctic",
+    "T2m",
+    transformation = "interpolate",
+    file_path      = system.file("grib/AROME_Arctic", package = "harpData"),
+    file_template  = "harmonie_grib_fp",
+    return_data    = TRUE
+)
+```
+
+```{r read-forecast-interpolate-res}
+read_forecast(
+    2018071000,
+    2018071000,
+    "AROME_Arctic",
+    "T2m",
+    lead_time      = seq(0, 3),
+    transformation = "interpolate",
+    file_path      = system.file("grib/AROME_Arctic", package = "harpData"),
+    file_template  = "harmonie_grib_fp",
+    return_data    = TRUE
+) %>% 
+  transmute(fcdate, lead_time, SID, parameter, AA_det = AROME_Arctic_det) %>% 
+  print(n = 7)
+```
+
+---
+
+### `transformation_opts = interpolate_opts()`
+```{r read-forecast-interpolate-my-stations, echo = TRUE}
+my_stations <- data.frame(
+  SID = c(1003, 1004, 1006),
+  lat = c(77.0000, 78.9167, 78.2506),
+  lon = c(15.5000, 11.9331, 22.8225)
+)
+```
+
+```{r read-forecast-interpolate-opts-code, eval = FALSE, echo = TRUE}
+read_forecast(
+  2018071000,
+  2018071000,
+  "AROME_Arctic",
+  "T2m",
+  transformation      = "interpolate",
+  transformation_opts = interpolate_opts(
+    stations    = my_stations,
+    correct_t2m = FALSE,
+    method      = "bilinear"
+  ),
+  file_path           = system.file("grib/AROME_Arctic", package = "harpData"),
+  file_template       = "harmonie_grib_fp",
+  return_data         = TRUE
+)
+```
+
+---
+
+### `transformation_opts = interpolate_opts()`
+```{r read-forecast-interpolate-opts-res}
+read_forecast(
+  2018071000,
+  2018071000,
+  "AROME_Arctic",
+  "T2m",
+  lead_time     = seq(0, 3),
+  transformation      = "interpolate",
+  transformation_opts = interpolate_opts(
+    stations    = my_stations,
+    correct_t2m = FALSE,
+    method      = "bilinear"
+  ),
+  file_path           = system.file("grib/AROME_Arctic", package = "harpData"),
+  file_template       = "harmonie_grib_fp",
+  return_data         = TRUE
+) %>% 
+  transmute(fcdate, lead_time, SID, parameter, AA_det = AROME_Arctic_det)
+```
+
+## `transformation = "regrid"`
+```{r read-forecast-regrid-my-domain, echo = TRUE}
+library(meteogrid)
+my_domain <- Make.domain(
+  "lambert",
+  clonlat = c(15.57905, 78.21638),
+  nxny    = c(15, 15), 
+  dxdy    = c(10000, 10000),
+  reflat  = 77.5,   
+  reflon  = -25
+)
+```
+
+```{r read-forecast-regrid-code, echo = TRUE, eval = FALSE}
+read_forecast(
+  2018071000,
+  2018071000,
+  "AROME_Arctic",
+  "S10m",
+  transformation      = "regrid",
+  transformation_opts = regrid_opts(new_domain = my_domain),
+  file_path           = system.file("grib/AROME_Arctic", package = "harpData"),
+  file_template       = "harmonie_grib_fp",
+  return_data         = TRUE
+)
+```
+
+## `transformation = "regrid"`
+```{r read-forecast-regrid-res}
+read_forecast(
+  2018071000,
+  2018071000,
+  "AROME_Arctic",
+  "S10m",
+  lead_time           = seq(0, 3),
+  transformation      = "regrid",
+  transformation_opts = regrid_opts(
+    new_domain    = my_domain
+  ),
+  file_path           = system.file("grib/AROME_Arctic", package = "harpData"),
+  file_template       = "harmonie_grib_fp",
+  return_data         = TRUE
+) %>% 
+  transmute(fcdate, lead_time, parameter, AA_det = AROME_Arctic_det) %>% 
+  print(n = 10)
+```
+
+## `transformation = "xsection"`
+```{r read-forecast-xsection-code, echo = TRUE, eval = FALSE}
+read_forecast(
+  20180710, 
+  20180710, 
+  "AAEPS", 
+  "T", 
+  members             = c(0, 1), 
+  vertical_coordinate = "model", 
+  transformation      = "xsection", 
+  transformation_opts = xsection_opts(a = c(11, 78), b = c(14, 78.25))
+  file_path           = system.file("netcdf", package = "harpData"), 
+  file_template       = "{fcst_model}/fc{YYYY}{MM}{DD}{HH}.nc", 
+  file_format_opts    = netcdf_opts("met_norway_eps"), 
+  return_data         = TRUE
+)
+```
+
+## `transformation = "xsection"`
+```{r read-forecast-xsection-res}
+read_forecast(
+  20180710, 
+  20180710, 
+  "AAEPS", 
+  "T", 
+  lead_time           = seq(0, 3),
+  members             = c(0, 1), 
+  vertical_coordinate = "model", 
+  transformation      = "xsection", 
+  transformation_opts = xsection_opts(a = c(11, 78), b = c(14, 78.25)),
+  file_path           = system.file("netcdf", package = "harpData"), 
+  file_template       = "{fcst_model}/fc{YYYY}{MM}{DD}{HH}.nc", 
+  file_format_opts    = netcdf_opts("met_norway_eps"), 
+  return_data         = TRUE
+) %>% select(fcdate, lead_time, parameter, level_type, level, starts_with("AA"))
+```
+
+## Save to SQLite
+
+_(Interpolated / point data only)_
+
+```{r save-to-sqlite-code, eval = FALSE, echo = TRUE}
+read_forecast(
+  start_date       = 2019021700,
+  end_date         = 2019021718,
+  fcst_model       = c("MEPS_prod", "CMEPS_prod"),
+  parameter        = c("T", "Td"),
+  by               = 3,
+  lead_time        = seq(0, 12, 3),
+  members          = list(
+    MEPS_prod  = seq(0, 10),
+    CMEPS_prod = c(0, 1, 3, 4, 5, 6)
+  ),
+  lags             = list(CMEPS_prod = c(0, 0, 2, 2, 1, 1)),
+  file_path        = system.file("vfld", package = "harpData"),
+  file_template    = "vfld_eps",
+  output_file_opts = sqlite_opts(
+    path = "/path/to/sqlite/data", template = "fctable"
+  )
+)
+```
+
+## Vertical profile verification
+```{r vertical-profile-read-fcst, echo = TRUE}
+fcst <- read_point_forecast(
+  start_date          = 2019021700,
+  end_date            = 2019021718,
+  fcst_model          = c("CMEPS_prod", "MEPS_prod"),
+  fcst_type           = "EPS",
+  parameter           = "T", 
+  vertical_coordinate = "pressure",
+  lead_time           = seq(0, 12, 3),
+  by                  = "6h",
+  lags                = list(
+    CMEPS_prod = paste0(seq(0, 5), "h"),
+    MEPS_prod  = "0h"
+  ),
+  file_path           = system.file("FCTABLE/ensemble", package = "harpData")
+) %>% common_cases()
+```
+
+```{r vertical-profile-read-obs-join, echo = TRUE}
+obs <- read_point_obs(
+  first_validdate(fcst),
+  last_validdate(fcst),
+  "T",
+  vertical_coordinate = "pressure",
+  obs_path            = system.file("OBSTABLE", package = "harpData")
+)
+
+fcst <- join_to_fcst(fcst, obs)
+
+verif <- ens_verify(fcst, T, groupings = c("leadtime", "p"))
+```
+
+---
+
+`plot_profile_verif()`
+```{r plot-profile-verif-filter, echo = TRUE}
+plot_profile_verif(verif, spread_skill, filter_by = vars(leadtime == 3))
+```
+
+---
+
+`plot_profile_verif()`
+```{r plot-profile-verif-facet, echo = TRUE}
+verif <- mutate_list(verif, leadtime = paste0("T + ", leadtime, "h"))
+plot_profile_verif(verif, spread_skill, facet_by = vars(fct_inorder(leadtime)))
+```
+
+## Grouped verification
+```{r read-forecast-group, echo = TRUE}
+fcst <- read_point_forecast(
+  2019021700,
+  2019021718,
+  "MEPS_prod",
+  "EPS",
+  "T2m",
+  file_path = system.file("FCTABLE/ensemble", package = "harpData")
+)
+
+obs <- read_point_obs(
+  first_validdate(fcst),
+  last_validdate(fcst),
+  "T2m",
+  stations = pull_stations(fcst),
+  obs_path = system.file("OBSTABLE", package = "harpData")
+)
+```
+
+## Grouped verification
+```{r verif-forecast-group, echo = TRUE}
+obs  <- mutate(obs, region = floor(SID / 1000))
+
+fcst <- join_to_fcst(fcst, obs)
+
+verif <- ens_verify(
+  fcst, T2m, groupings = list("leadtime", c("leadtime", "region"))
+)
+
+verif <- mutate_list(
+  verif, region = fct_inorder(paste0("Region: ", region))
+)
+```
+
+## Grouped verification
+```{r plot-forecast-group, echo = TRUE}
+plot_point_verif(verif, crps, facet_by = vars(region))
+```
+
+## Binding verifcation data
+```{r prep_data_to_bind}
+params = c("T2m", "S10m")
+for (param in params) {
+  fcst <- read_point_forecast( 2019021700,
+    2019021718,
+    "MEPS_prod",
+    "EPS",
+    param,
+    file_path = system.file("FCTABLE/ensemble", package = "harpData")
+  )
+  
+  obs <- read_point_obs(
+    first_validdate(fcst),
+    last_validdate(fcst),
+    param,
+    stations = pull_stations(fcst),
+    obs_path = system.file("OBSTABLE", package = "harpData")
+  )
+  
+  fcst <- join_to_fcst(fcst, obs)
+  
+  assign(paste0("verif_", param), ens_verify(fcst, {{param}}))
+}
+```
+
+```{r bind_and_plot, echo = TRUE}
+verif <- bind_point_verif(verif_T2m, verif_S10m)
+plot_point_verif(verif, spread_skill, facet_by = vars(parameter), facet_scales = "free_y")
+```
+
+## Gridded data
+```{r read-gridded-fcst, echo = TRUE}
+t2m <- read_forecast(
+  20180710, 
+  20180710, 
+  "AAEPS", 
+  "T2m", 
+  lead_time           = seq(0, 12, 3),
+  file_path           = system.file("netcdf", package = "harpData"), 
+  file_template       = "{fcst_model}/fc{YYYY}{MM}{DD}{HH}.nc", 
+  file_format_opts    = netcdf_opts("met_norway_eps"), 
+  return_data         = TRUE
+) %>% 
+  scale_point_forecast(-273.15, new_units = "degC")
+```
+
+## Gridded data
+```{r print-gridded-fcst, echo = TRUE}
+t2m
+```
+
+## Gridded data
+```{r stats-gridded-fcst, echo = TRUE}
+ens_stats(t2m)
+```
+
+## Gridded data
+```{r more-stats-gridded-fcst, echo = TRUE}
+ens_stats(t2m, min = TRUE, max = TRUE, prob_thresh = 0, nbh_radius = 7)
+```
+
+## Gridded data
+```{r plot-stats-gridded-fcst, echo = TRUE}
+t2m <- ens_stats(t2m, min = TRUE, max = TRUE, prob_thresh = 0)
+plot_field(t2m, "AAEPS", ens_spread, 2018071000, 12)
+```
+
+## Gridded data
+```{r plot-prob-ge0-gridded-fcst, echo = TRUE}
+plot_field(t2m, "AAEPS", prob_ge_0, 2018071000, 12)
+```
+
+## Gridded data
+```{r plot-prob-le0-gridded-fcst, echo = TRUE}
+t2m <- ens_stats(t2m, prob_thresh = 0, prob_inequality = `<=`)
+plot_field(t2m, "AAEPS", prob_le_0, 2018071000, 12, breaks = seq(0.2, 1, 0.2))
+```
+
+## Gridded data
+```{r plot-prob-le0-nbh7-gridded-fcst, echo = TRUE}
+t2m <- ens_stats(t2m, prob_thresh = 0, prob_inequality = `<=`, nbh_radius = 7)
+plot_field(t2m, "AAEPS", prob_le_0, 2018071000, 12, breaks = seq(0.2, 1, 0.2), palette = scico::scico(10, palette = "tokyo", direction = -1))
+```
+
+## Observation errors
+
+For ensembles, observation errors can be accounted for by including an error component in the ensemble forecast distribution. This is done with the `jitter_forecast` function. 
+```{r obs-error-read-fcst}
+fcst <- read_point_forecast( 
+  2019021700,
+  2019021718,
+  "MEPS_prod",
+  "EPS",
+  "T2m",
+  file_path = system.file("FCTABLE/ensemble", package = "harpData")
+) %>% 
+  join_to_fcst(
+    read_point_obs(
+      2019021700,
+      2019022018,  
+      "T2m",
+      obs_path = system.file("OBSTABLE", package = "harpData")
+    )
+  )
+```
+
+```{r jitter-fcst, echo = TRUE}
+verif        <- ens_verify(fcst, T2m)
+jitter_func  <- function(x) x + rnorm(1, 0, 1)
+verif_jitter <- ens_verify(jitter_fcst(fcst, jitter_func), T2m)
+
+verif <- mutate_list(verif, `Obs error` = "No Obs errors")
+verif_jitter <- mutate_list(verif_jitter, `Obs error` = "Obs errors ncluded")
+
+verif <- bind_point_verif(verif, verif_jitter)
+```
+
+## Observation errors
+```{r jitter-fcst-spread-skill, echo = TRUE}
+plot_point_verif(verif, spread_skill, colour_by = `Obs error`)
+```
+
+## Observation errors
+```{r jitter-fcst-rank-hist, echo = TRUE, fig.height=4}
+plot_point_verif(
+  verif, normalized_rank_histogram, colour_by = `Obs error`, 
+  rank_is_relative = TRUE, rank_hist_type = "lollipop"
+)
+```
+
+## Score cards
+[See Article on harphub](https://harphub.github.io/harp/articles/scorecards.html)
+
+## What's happening next year
+- Finalize inline documentation and websites with function reference
+- harp [book](https://harphub.github.io/harp_tutorial/) - Need reviewers
+- Formal tests [this is a big job!]
+
+## What's happening next year
+- Minor improvements
+    - Profiling of the more complicated functions for speed and memory use
+    - Harmonize function arguments
+    - Verification against analysis [`read_obs()` / `read_analysis()` function to compliment `read_forecast()`]
+    - Simpler plotting of fields and enhanced capability (e.g. faceting)
+    - Wind speed and direction from U and V
+    - Verification of wind direction
+    - Combined and categorical probabilities
+    
+
+## What's happening next year
+- More options in shiny app
+    - Plot vertical profile verification
+    - Different options for top level menus
+    - [Graphics better optimized for web display with popups etc.: d3.js]
+
+- Your requests
+    - File issues at the [harphub repository](https://github.com/harphub)
+    - [harpIO](https://github.com/harphub/harpIO/issues) - for IO, data structures and data wrangling
+    - [harpPoint](https://github.com/harphub/harpPoint/issues) - for point verification
+    - [harpVis](https://github.com/harphub/harpVis/issues) - for visualization and shiny apps
+    - [harpSpatial](https://github.com/harphub/harpSpatila/issues) - for spatial verification
+    - [harp](https://github.com/harphub/harp/issues) - for issues that cover more than 1 harp package
