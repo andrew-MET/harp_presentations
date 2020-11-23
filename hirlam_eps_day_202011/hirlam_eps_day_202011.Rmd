@@ -329,6 +329,7 @@ fcst <- read_point_forecast(
 ) %>% common_cases()
 ```
 
+## Vertical profile verification
 ```{r vertical-profile-read-obs-join, echo = TRUE}
 obs <- read_point_obs(
   first_validdate(fcst),
