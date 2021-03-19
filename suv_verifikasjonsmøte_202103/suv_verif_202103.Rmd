@@ -390,11 +390,14 @@ fcst %>%
 - Save : `save_point_verif()`
 - Explore : `shiny_plot_point_verif()`
 
-## Demonstration
+## [Demonstration](https://andrew-met.github.io/harp_presentations/verif_demo.html)
 
 ## Resources
 
-<font size=5>https://harphub.github.io/harp_presentations/suv_verif_202103.html</font>
+This presentation
+
+
+<font size=5>https://andrew-met.github.io/harp_presentations/suv_verif_202103.html</font>
 
 
 - [harp website](https://harphub.github.io/harp)
