@@ -1,0 +1,402 @@
+---
+title: "An introduction to harp"
+author: "Andrew Singleton"
+date: "SUV verifikasjonsmøte 19 March 2021"
+output: 
+  revealjs::revealjs_presentation:
+    theme: league
+    transition: fade
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, message = FALSE, warning = FALSE, dev.args = list(bg = "transparent"), collapse = TRUE,
+  fig.height = 5
+)
+
+library(harp)
+library(tidyr)
+library(dplyr)
+library(here)
+library(forcats)
+
+theme_presentation <- theme_set(theme_harp_midnight(base_size = 12))
+theme_presentation <- theme_update(
+    panel.background  = element_rect(fill = "transparent"), 
+    plot.background   = element_rect(fill = "transparent"), 
+    legend.background = element_rect(fill = "transparent"), 
+    legend.key        = element_rect(fill = "transparent")
+  )
+```
+
+<style>
+  .reveal {font-family: comfortaa;}
+  .reveal h1, .reveal h2, .reveal h3, .reveal h4, .reveal h5, .reveal h6 {text-transform:none; font-family:comfortaa;}
+  .reveal section img { background:none; border:none; box-shadow:none; }
+  .reveal table { border-width:0px; }
+  .reveal table td { bordoer-width:0px; }
+  .reveal pre code {background:#222;}
+  .reveal pre {margin: 7px auto;}
+  code span.kw {color:yellow}
+  code span.dt {color: tomato}
+</style>
+
+## __What is harp?__
+
+- A "framework" for working with meteorological / climatological data in R
+- Comprises several packages:
+  - harpIO - for reading / writing data
+  - harpPoint - for point verification
+  - harpSpatial - for spatial verification
+  - harpVis - for visualization
+  - (harpMethods) - for underlying classes, methods and common functionality
+  - harp - meta package for functionality that includes more than 1 harp pacakge
+  - harpData - for example data
+  
+## __Philisophy__
+
+- harp is built with "tidy" data principles in mind
+- No matter where the data come from or what they represent the structure is (nearly) always the same
+  - Data are stored as data frames
+  - Every column is a "variable"
+  - Every row is an "observation"
+  - Every cell is a "value"
+- Designed to integrate with the "tidyverse" in R
+  - data wrangling with _dplyr_ and _tidyr_ verbs
+  - plotting with _ggplot2_ (where appropriate)
+  - functional programming with _purrr_
+
+## __Installation__
+
+- The harp code is stored on Github under "harphub"
+- Can be installed in R with the following:
+
+```{r install, eval=FALSE, echo=TRUE}
+install.packages("remotes")
+library(remotes)
+install_github("harphub/harp")
+```
+
+- Installation can take some time as harp has many (too many?) dependencies
+
+## __Reading forecast data__
+
+`read_forecast()` can be used to read forecasts from any file format.
+
+```{r read-forecast1, echo=TRUE, eval=FALSE}
+library(harp)
+
+read_forecast(
+  start_date,
+  end_date,
+  fcst_model,
+  (parameter),
+  (file_path),
+  (file_template),
+  (file_format_opts),
+  (lead_time),
+  (members)
+)
+```
+
+## File name templates
+
+- File names for `read_forecast()` are generated from templates. Dynamic parts of the file name are in { }
+
+```{r file-name-template, echo=TRUE, eval=FALSE}
+file_path  <- "/my/path"
+fcst_model <- "MEPS"
+start_date <- 2021031900 
+end_date   <- 2021031912
+by         <- "6h"
+lead_time  <- seq(0, 3, 3)
+members    <- c(0, 2)
+template   <- "{fcst_model}/{YYYY}/{MM}/{DD}/{fcst_model}_fc{YYYY}{MM}{DD}T{HH}Z_mbr{MBR3}+{LDT3}"
+```
+
+## File name templates
+
+- File names for `read_forecast()` are generated from templates. Dynamic parts of the file name are in { }
+
+```{r file-name-generate, echo=TRUE, eval=FALSE}
+file_path  <- "/my/path"
+fcst_model <- "MEPS"
+start_date <- 2021031900 
+end_date   <- 2021031912
+by         <- "6h"
+lead_time  <- seq(0, 3, 3)
+members    <- c(0, 2)
+template   <- "{fcst_model}/{YYYY}/{MM}/{DD}/{fcst_model}_fc{YYYY}{MM}{DD}T{HH}Z_mbr{MBR3}+{LDT3}"
+```
+
+```{r file-name-template-out}
+file_path  <- "/my/path"
+fcst_model <- "MEPS"
+start_date <- 2021031900 
+end_date   <- 2021031906
+by         <- "6h"
+lead_time  <- seq(0, 3, 3)
+members    <- c(0, 2)
+template   <- "{fcst_model}/{YYYY}/{MM}/{DD}/{fcst_model}_fc{YYYY}{MM}{DD}T{HH}Z_mbr{MBR3}+{LDT3}"
+generate_filenames(
+  file_path     = file_path,
+  file_template = template,
+  fcst_model    = fcst_model,
+  start_date    = start_date,
+  end_date      = end_date,
+  lead_time     = lead_time,
+  members       = members,
+  by            = by
+) %>% cat(sep = "\n")
+```
+
+## Built in templates
+
+- For "known" file name structures there are built in templates
+
+```{r show-file-templates, echo=TRUE, eval=FALSE}
+show_file_templates()
+```
+
+```{r show-file-templates-output}
+show_file_templates()
+```
+
+## Built in templates
+
+- To show a full template, pass the row from the output to `show_file_templates()`.
+
+```{r show-file-templates-meps, echo=TRUE}
+show_file_templates(21)
+```
+
+## The `harp_fcst` object
+
+- The output of `read_forecast()` is a `harp_fcst` object - named list of data frames - one for each `fcst_model`
+
+```{r read-meps, eval=FALSE, echo=TRUE}
+fcst <- read_forecast(
+  2021031200,
+  2021031212,
+  "MEPS",
+  "Pcp",
+  lead_time        = seq(12, 24, 12),
+  members          = c(0, 10, 20),
+  file_template    = "meps_lagged_6h_subset",
+  file_format_opts = netcdf_opts("met_norway_eps"),
+  show_progress    = TRUE, 
+  return_data      = TRUE
+)
+```
+
+## The `harp_fcst` object
+
+```{r show-harp-fcst}
+fcst <- readRDS("fcst_data.RDS")
+fcst
+```
+
+## `dplyr` verbs on `harp_fcst` objects
+
+```{r harp-fcst-selected-cols, echo=TRUE}
+fcst %>% 
+  select(fcdate, lead_time, starts_with("MEPS"))
+```
+
+```{r harp-fcst-filter, echo = TRUE}
+fcst %>% 
+  select(fcdate, lead_time, MEPS_mbr000) %>% 
+  filter(lead_time == 12)
+```
+
+## Plotting a field
+
+```{r plot_field, echo = TRUE}
+plot_field(
+  fcst, fcst_model = "MEPS", plot_col = MEPS_mbr000, 
+  fcdate = 2021031200, lead_time = 12
+)
+
+```
+
+## Plotting a field
+
+```{r plot_field-better-breaks, echo = TRUE}
+plot_field(
+  fcst, fcst_model = "MEPS", plot_col = MEPS_mbr000, 
+  fcdate = 2021031200, lead_time = 12,
+  palette = c("transparent", viridis::viridis(255)),
+  breaks = c(0, 0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32, 64)
+)
+```
+
+## Transformations
+
+- `read_forecast()` can transform the data by interpolating to points, to a new grid (and / or projection), or to a vertical cross section (soonish!)
+
+```{r transform-interpolate, echo=TRUE, eval=FALSE}
+fcst <- read_forecast(
+  2021031200,
+  2021031212,
+  c("MEPS", "AROME_ARCTIC"),
+  "T2m",
+  lead_time        = seq(0, 12, 3),
+  file_template    = list(
+    MEPS         = "meps_det", 
+    AROME_ARCTIC = "arome_arctic_extracted"
+  ),
+  file_format_opts = netcdf_opts("met_norway_det"),
+  transformation   = "interpolate", 
+  show_progress    = TRUE, 
+  return_data      = TRUE
+)
+```
+
+## Interpolated data
+
+```{r transform-interpolate-get-data}
+fcst <- readRDS("fcst_point_data.RDS")
+```
+
+```{r, print-interpolated-data, echo=TRUE}
+fcst %>% 
+  select(fcdate, lead_time, SID, ends_with("_det"))
+```
+
+## Saving interpolated data
+
+- It takes a long time to read and interpolate full model fields, so the interpolated data can be saved to SQLite files
+- Simply add `output_file_opts = sqlite_opts(path = <path>)`
+
+```{r, save-to-sqlite, echo=TRUE, eval=FALSE}
+read_forecast(
+  2021031200,
+  2021031212,
+  c("MEPS", "AROME_ARCTIC"),
+  "T2m",
+  lead_time        = seq(0, 12, 3),
+  file_template    = list(
+    MEPS         = "meps_det", 
+    AROME_ARCTIC = "arome_arctic_extracted"
+  ),
+  file_format_opts = netcdf_opts("met_norway_det"),
+  transformation   = "interpolate", 
+  output_file_opts = sqlite_opts(path = "/path/to/output"),
+  show_progress    = TRUE
+)
+```
+
+## Reading the interpolated forecasts
+
+- The function `read_point_forecast()` is used to read interpolated data
+
+```{r read-point-forecast-not-run, echo=TRUE, eval=FALSE}
+fcst <- read_point_forecast(
+  2021031200, 
+  2021031212, 
+  fcst_model = c("MEPS", "AROME_ARCTIC"), 
+  fcst_type  = "det", 
+  parameter  = "T2m", 
+  file_path  = "suv_verifikasjonsmøte_202103"
+)
+```
+
+```{r read-point-forecast-is-run, echo=FALSE}
+fcst <- read_point_forecast(
+  2021031200, 
+  2021031212, 
+  fcst_model = c("MEPS", "AROME_ARCTIC"), 
+  fcst_type  = "det", 
+  parameter  = "T2m", 
+  file_path  = getwd()
+)
+```
+
+## Reading the interpolated forecasts
+
+```{r show-interpolated-fcst, echo=TRUE}
+fcst %>% 
+  select(fcdate, leadtime, SID, ends_with("det"))
+```
+
+## Observations
+
+- harp is designed to work with `vobs` data 
+  - text files used with "monitor" for operational verification in HIRLAM institutes
+  - available on:
+    - ecgb at `/scratch/ms/dk/nhz/oprint/OBS4`
+    - lustre for AROME-ARCTIC
+    - Extreme security metcoop servers for MEPS (Also in SQLite)
+- Interface with `frost` coming soon(ish) [based on miIO]
+- Convert `vobs` to `SQLite` with `read_obs_convert()`
+- Read observations from `SQLite` with `read_point_obs()`
+
+## Point verification workflow
+
+- Read forecasts
+- Read observations
+- Join
+- Verify
+- Visualize
+
+## Point verification workflow
+
+- Read forecasts : `read_point_forecast()` 
+- Read observations 
+- Join  
+- Verify
+- Visualize
+
+## Point verification workflow
+
+- Read forecasts : `read_point_forecast()`
+- Read observations : `read_point_obs()`
+- Join
+- Verify
+- Visualize
+
+## Point verification workflow
+
+- Read forecasts : `read_point_forecast()`
+- Read observations : `read_point_obs()`
+- Join : `join_to_forecast()`
+- Verify
+- Visualize
+
+## Point verification workflow
+
+- Read forecasts : `read_point_forecast()`
+- Read observations : `read_point_obs()`
+- Join : `join_to_forecast()`
+- Verify : `det_verify()` / `ens_verify()`
+- Visualize
+
+## Point verification workflow
+
+- Read forecasts : `read_point_forecast()`
+- Read observations : `read_point_obs()`
+- Join : `join_to_forecast()`
+- Verify : `det_verify()` / `ens_verify()`
+- Visualize : `plot_point_verif()`
+
+## Point verification workflow
+
+- Read forecasts : `read_point_forecast()`
+- Read observations : `read_point_obs()`
+- Join : `join_to_forecast()`
+- Verify : `det_verify()` / `ens_verify()`
+- Visualize : `plot_point_verif()`
+- Save : `save_point_verif()`
+- Explore : `shiny_plot_point_verif()`
+
+## Demonstration
+
+## Resources
+
+<font size=5>https://harphub.github.io/harp_presentations/suv_verif_202103.html</font>
+
+
+- [harp website](https://harphub.github.io/harp)
+- [harp tutorial](https://harphub.github.io/harp_tutorial)
+- [R for Data Science](https://r4ds.had.co.nz/)
