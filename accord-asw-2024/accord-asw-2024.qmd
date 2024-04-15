@@ -1,0 +1,430 @@
+---
+title: "Reflections and Outcomes from the harp Training Course 2024"
+author: "Andrew Singleton [MET Norway]"
+format: 
+  revealjs:
+    theme: [default, custom.scss]
+    navigation-mode: vertical
+---
+
+## 4 - 8 March 2024 :: Dublin, Ireland {background-image="met-eireann.jpg"}
+
+::: footer
+By William Murphy from Dublin, Ireland - Met Éireann (Irish Meteorological Service), CC BY-SA 2.0, https://commons.wikimedia.org/w/index.php?curid=3302075
+:::
+
+## Participants {background-image="group-pic.jpeg"}
+
+18 in person
+
+18 online
+
+## Instructors {.center}
+
+Andrew Singleton [MET Norway]
+
+Alex Deckmyn [RMI]
+
+## Presenters {.center}
+
+James Fannon (Met Éireann)
+
+Carlos Peralta (DMI)
+
+Polly Schmederer (GeoSphere Austria)
+
+Samuel Viana (AEMET)
+
+Juanje Gonzalez (AEMET)
+
+
+## Feedback Received {.center}
+
+5 in person
+
+4 online
+
+
+```{r get-feedback}
+library(dplyr)
+library(ggplot2)
+library(forcats)
+fb <- read.csv("feedback.csv")
+fb <- fb[2:nrow(fb), ]
+questions <- colnames(fb)[2:8]
+colnames(fb) <- c("timestamp", "attendance", "useful", "level", "pace", "gamechanger", "bad", "other")
+fb <- tibble(fb)
+```
+
+# Closed Questions
+
+## Attendance
+
+```{r attendance-donut, dev="svglite", dev.args=list(bg="transparent")}
+dat <- mutate(
+  summarise(fb, count = n(), .by = attendance), 
+  ymax = cumsum(count), 
+  ymin = lag(count, 1, default = 0)
+)
+ggplot(
+  dat, 
+  aes(
+    ymin = ymin, 
+    ymax = ymax, 
+    xmin = 9, 
+    xmax = 10, 
+    fill = fct_reorder(attendance, rev(count))
+  )
+) + 
+  geom_rect() + 
+  coord_polar(theta = "y") + 
+  xlim(c(6, 10)) + 
+  geom_text(x = 6, y = 0, label = "I\nattended...", size = 12, colour = "#EEEEEE") + 
+  theme_void() + 
+  labs(fill = NULL) + 
+  scale_fill_manual(values = c("steelblue", "#AA2233")) +
+  theme(
+    plot.background = element_rect(fill = "#333333", colour = "transparent"),
+    legend.text = element_text(colour = "#EEEEEE", size = 14)
+  )
+```
+
+## Was the course useful?
+
+```{r useful-donut, dev="svglite", dev.args=list(bg="transparent")}
+dat <- mutate(
+  summarise(fb, count = n(), .by = useful), 
+  ymax = cumsum(count), 
+  ymin = lag(count, 1, default = 0)
+)
+ggplot(
+  dat, 
+  aes(
+    ymin = ymin, 
+    ymax = ymax, 
+    xmin = 9, 
+    xmax = 10, 
+    fill = fct_reorder(useful, rev(count))
+  )
+) + 
+  geom_rect() + 
+  coord_polar(theta = "y") + 
+  xlim(c(6, 10)) + 
+  geom_text(x = 6, y = 0, label = "The course\nwas...", size = 12, colour = "#EEEEEE") + 
+  theme_void() + 
+  labs(fill = NULL) + 
+  scale_fill_manual(values = c("steelblue", "#AA2233")) +
+  theme(
+    plot.background = element_rect(fill = "#333333", colour = "transparent"),
+    legend.text = element_text(colour = "#EEEEEE", size = 14)
+  )
+```
+
+
+## How was the level?
+
+```{r level-donut, dev="svglite", dev.args=list(bg="transparent")}
+dat <- mutate(
+  summarise(fb, count = n(), .by = level), 
+  ymax = cumsum(count), 
+  ymin = lag(count, 1, default = 0)
+)
+ggplot(
+  dat, 
+  aes(
+    ymin = ymin, 
+    ymax = ymax, 
+    xmin = 9, 
+    xmax = 10, 
+    fill = fct_reorder(level, rev(count))
+  )
+) + 
+  geom_rect() + 
+  coord_polar(theta = "y") + 
+  xlim(c(6, 10)) + 
+  geom_text(x = 6, y = 0, label = "The level\nwas...", size = 12, colour = "#EEEEEE") + 
+  theme_void() + 
+  labs(fill = NULL) + 
+  scale_fill_manual(values = c("steelblue", "#AA2233")) +
+  theme(
+    plot.background = element_rect(fill = "#333333", colour = "transparent"),
+    legend.text = element_text(colour = "#EEEEEE", size = 14)
+  )
+```
+
+## How was the pace?
+
+```{r pace-donut, dev="svglite", dev.args=list(bg="transparent")}
+dat <- mutate(
+  summarise(fb, count = n(), .by = pace), 
+  ymax = cumsum(count), 
+  ymin = lag(count, 1, default = 0)
+)
+ggplot(
+  dat, 
+  aes(
+    ymin = ymin, 
+    ymax = ymax, 
+    xmin = 9, 
+    xmax = 10, 
+    fill = fct_reorder(pace, rev(count))
+  )
+) + 
+  geom_rect() + 
+  coord_polar(theta = "y") + 
+  xlim(c(6, 10)) + 
+  geom_text(x = 6, y = 0, label = "The pace\nwas...", size = 12, colour = "#EEEEEE") + 
+  theme_void() + 
+  labs(fill = NULL) + 
+  scale_fill_manual(values = c("steelblue", "#AA2233")) +
+  theme(
+    plot.background = element_rect(fill = "#333333", colour = "transparent"),
+    legend.text = element_text(colour = "#EEEEEE", size = 14)
+  )
+```
+
+
+# Open Questions
+
+## 
+
+- Was there anything that was a total game changer for you? (e.g. something you didn't know before, but will make your work much easier)
+
+- Was there anything that was especially bad? (e.g. really badly explained, really boring, really irrelevant) 
+
+- Any other comments
+
+# Topics
+
+# Getting started
+
+Installing harp
+
+Setting up a project
+
+Data for the course
+
+
+# Basic reading of data
+
+`read_grid()` to read individual files
+
+`read_forecast()` to read multiple files
+
+harp's Data Classes
+
+Interpolation to points at read time
+
+Lagged ensembles
+
+## Comments
+
+- _The parameter handling and scaling (e.g. converting temperature from Kelvin 
+  to &deg;C) is much easier now_
+  
+- _Being able to get wind speed and direction from U and V is really helpful_
+
+# Point Verification
+
+Steps in the workflow - RRJV(S/P) ^1^
+
+::: footer
+1. Read forecasts, Read Observations, Join, Verify, Save / Plot
+:::
+
+## RRJV
+
+`read_point_forecast()`
+
+`read_point_obs()`
+
+`join_to_fcst()`
+
+`det/ens_verify()`
+
+<h2>S/P</h2>
+
+`plot_point_verif()`
+
+`save_point_verif()`
+
+`shiny_plot_point_verif()`
+
+# Point Verification
+
+Steps in the workflow - RRJV(S/P) ^1^
+
+Observation errors
+
+Grouped verification
+
+Vertical profiles
+
+Conditional verification
+
+::: footer
+1. Read forecasts, Read Observations, Join, Verify, Save / Plot
+:::
+
+## Comments
+
+- _It was my first time seeing conditional verification, which will be very useful for analysing performance in specific circumstances_
+
+- _Stratifying verification by wind direction will be especially useful, as long as you know what the direction in degrees means on the compass ;-)_
+
+# Building a verification script
+
+Basic Skeleton
+
+Adding the code
+
+Scaling and observation errors
+
+Non Standard evaluation (NSE)
+
+## Non Standard evaluation (NSE)
+
+harp uses NSE for a smoother ride for interactive running
+
+Causes problems for using variables 
+
+Embracing variables with `{{ }}`
+
+# Building a verification script
+
+Basic Skeleton
+
+Adding the code
+
+Scaling and observation errors
+
+Non Standard evaluation (NSE)
+
+Defining parameters
+
+Looping over parameters with for loops
+
+Functional programming with `walk()`
+
+harp scripts for UWC-West, ACCORD and DEODE
+
+## Comments
+
+- _'Build a Script' was particularly useful as I am not an R expert and the good practises discussed here were very useful_
+
+- _Managed to code the basics script for point verification for a new task at our institute during the session on point verification_
+
+# Spatial Verification
+
+Workflow for spatial verification
+
+Choosing a verification grid
+
+Neighbourhood Contingency Tables
+
+HIRA
+
+Point verification like workflow for Ensemble FSS
+
+Using dFSS for upscaling probabilistic forecasts
+
+## Comments [Good]
+
+_Spatial verification was something that I had not worked within HARP of course, so it was useful to identify ways it can easily replace some existing tools_
+
+## Comments [Not so good]
+
+_It would be great if the spatial part was provided in a tidier manner. It is usually the case that the point verification and data ingestion part is prepared before hand and then the code is posted online every day. This does not happen with the spatial part, and there are always last minute developments that would be committed during the week . Also, using the development version in the course might not be the best practice in my opinion, since this version is changing and the functions might change. Would it not be better to use the current stable version instead?_
+
+# Plotting Spatial data
+
+Basic plotting with `plot_field()` and `plot_domain()`
+
+Where to find colour palettes
+
+Using `ggplot()` with `geom_geomraster()`
+
+Faceting and formatting titles
+
+Tricks for improving plotting speed
+
+## `geom_georaster()`
+
+__ggplot__ geom for plotting georeferenced rasters
+
+```{r get-plot-data}
+library(harp)
+library(scico)
+t2m       <- readRDS("t2m.rds")
+precip_1h <- readRDS("pcp.rds")
+```
+
+```{r show-t2m-plot, echo=TRUE}
+ggplot(t2m, aes(geofield = fcst)) + geom_georaster() + theme_harp_map()
+```
+
+
+## `geom_georaster()`
+
+```{r code-pcp-plot, echo=TRUE, eval=FALSE}
+map <- get_map(precip_1h$fcst)
+ggplot() + 
+  geom_polygon(aes(x, y, group = group), data = map, fill = "grey") +
+  geom_georaster(
+    aes(geofield = fcst), data = precip_1h,
+    upscale_method = "downsample", upscale_factor = 4
+  ) +
+  geom_polygon(
+    aes(x, y, group = group), data = map,
+    fill = "transparent", colour = "grey20"
+  ) + 
+  scale_fill_scico(
+    "mm", palette = "oslo", trans = "log", direction = -1,
+    limits = c(0.125, 64), breaks = seq_double(0.125, 10),
+    na.value = "transparent"
+  ) +
+  facet_wrap(~member, nrow = 2) +
+  coord_equal(expand = FALSE) + 
+  theme_harp_map()
+```
+
+## `geom_georaster()`
+
+```{r show-pcp-plot, dev.args=list(bg="transparent")}
+map <- get_map(precip_1h$fcst)
+ggplot() + 
+  geom_polygon(aes(x, y, group = group), data = map, fill = "grey") +
+  geom_georaster(
+    aes(geofield = fcst), data = precip_1h,
+    upscale_method = "downsample", upscale_factor = 4
+  ) +
+  geom_polygon(
+    aes(x, y, group = group), data = map,
+    fill = "transparent", colour = "grey20"
+  ) + 
+  scale_fill_scico(
+    "mm", palette = "oslo", trans = "log", direction = -1,
+    limits = c(0.125, 64), breaks = seq_double(0.125, 10),
+    na.value = "transparent"
+  ) +
+  facet_wrap(~member, nrow = 2) +
+  coord_equal(expand = FALSE) + 
+  theme_harp_map() +
+  theme(
+    plot.background = element_rect(fill = "#333333", colour = "transparent"),
+    legend.background = element_rect(fill = "#333333", colour = "transparent"),
+    legend.text = element_text(colour = "#EEEEEE"),
+    legend.title = element_text(colour = "#EEEEEE")
+  )
+```
+
+## Comments
+
+- _The spatial data handling in harp was very impressive and I'll be using it much more for visualisation going forward_
+
+- _[Good] Getting more familiar with the visualization capabilities of harp_
+
+# [Website](https://harphub.github.io/harp_training_2024/){preview-link="true"}
+
+
+# Thanks to our Irish hosts! {background-image="harp-pints.jpeg"}
