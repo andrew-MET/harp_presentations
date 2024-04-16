@@ -559,6 +559,8 @@ grib_opts(
 
 - D3 (faster, more interactive) graphics in shiny app?
 
+- Verification output in SQLite / JSON / parquet / arrow
+
 - Replace shiny with observable framework?
 
 # Thanks to our hosts at Met Éireann! {background-image="harp-pints.jpeg"}
