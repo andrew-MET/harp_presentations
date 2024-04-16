@@ -8,6 +8,27 @@ format:
     embed-resources: true
 ---
 
+## What is harp? {.center}
+
+---
+
+- A framework for (exploratory) data analysis in R
+
+- Verification and visualizations are the main built in applications
+
+- All data has the same format no matter the source 
+  - grib (1/2)
+  - FA
+  - NetCDF
+  - vfld / vobs
+  - OBSOUL
+  - HDF5 (Opera)
+  - SQLite
+
+---
+
+## The traing course {.center}
+
 ## 4 - 8 March 2024 :: Dublin, Ireland {background-image="met-eireann.jpg"}
 
 ::: footer
@@ -218,7 +239,7 @@ Interpolation to points at read time
 
 Lagged ensembles
 
-## Comments
+## Comments {.smaller}
 
 - _The parameter handling and scaling (e.g. converting temperature from Kelvin 
   to &deg;C) is much easier now_
@@ -267,7 +288,7 @@ Conditional verification
 1. Read forecasts, Read Observations, Join, Verify, Save / Plot
 :::
 
-## Comments
+## Comments {.smaller}
 
 - _It was my first time seeing conditional verification, which will be very useful for analysing performance in specific circumstances_
 
@@ -309,7 +330,7 @@ Functional programming with `walk()`
 
 harp scripts for UWC-West, ACCORD and DEODE
 
-## Comments
+## Comments {.smaller}
 
 - _'Build a Script' was particularly useful as I am not an R expert and the good practises discussed here were very useful_
 
@@ -319,7 +340,7 @@ harp scripts for UWC-West, ACCORD and DEODE
 
 Workflow for spatial verification
 
-Choosing a verification grid
+Choosing a verification grid & regridding
 
 Neighbourhood Contingency Tables
 
@@ -329,11 +350,14 @@ Point verification like workflow for Ensemble FSS
 
 Using dFSS for upscaling probabilistic forecasts
 
-## Comments [Good]
+Introduction to the panelification tool
 
+## Comments {.smaller}
+
+### Good
 _Spatial verification was something that I had not worked within HARP of course, so it was useful to identify ways it can easily replace some existing tools_
 
-## Comments [Not so good]
+### Not so good
 
 _It would be great if the spatial part was provided in a tidier manner. It is usually the case that the point verification and data ingestion part is prepared before hand and then the code is posted online every day. This does not happen with the spatial part, and there are always last minute developments that would be committed during the week . Also, using the development version in the course might not be the best practice in my opinion, since this version is changing and the functions might change. Would it not be better to use the current stable version instead?_
 
@@ -361,13 +385,15 @@ precip_1h <- readRDS("pcp.rds")
 ```
 
 ```{r show-t2m-plot, echo=TRUE}
-ggplot(t2m, aes(geofield = fcst)) + geom_georaster() + theme_harp_map()
+#| code-line-numbers: "false"
+ggplot(t2m, aes(geofield = fcst)) + geom_georaster()
 ```
 
 
 ## `geom_georaster()`
 
 ```{r code-pcp-plot, echo=TRUE, eval=FALSE}
+#| code-line-numbers: "false"
 map <- get_map(precip_1h$fcst)
 ggplot() + 
   geom_polygon(aes(x, y, group = group), data = map, fill = "grey") +
@@ -419,13 +445,120 @@ ggplot() +
   )
 ```
 
-## Comments
+## Comments {.smaller}
 
 - _The spatial data handling in harp was very impressive and I'll be using it much more for visualisation going forward_
 
 - _[Good] Getting more familiar with the visualization capabilities of harp_
 
+# Writing a data reading function
+
+## Interface to MET Norway Frost database
+
+- Required inputs and outputs
+
+- Not so easy to wing it!
+
+- Familiarity with the data format is most important
+
+# Dealing with local grib tables
+
+## Alternative strategies
+
+```{r grib-opts, eval=FALSE, echo=TRUE, rows.print=FALSE}
+#| code-line-numbers: "false"
+grib_opts(
+  param_find = list(param = use_grib_*())
+)
+```
+
+- Can be dangerous for grib2
+
+- Copy local definitions to Rgrib2 library directory
+
+- Send local definitions to Alex for inclusion in Rgrib2
+
+- Send local definitions to ECMWF for inclusion in eccodes
+
+# Contributing to harp
+
+- Demonstration of updating a plotting function
+
+- Github - fork -> feature branch -> pull -> merge -> push -> PR
+
+# General feedback 
+
+## Good {.smaller}
+
+- _The sum total of many new not very big things new to me has made a lot of difference_
+
+- _It was great to hear about new packages, functions and methods that I wasn't aware of. One tends to use what has worked in the past - so good to "be upgraded"_
+
+- _The courses and training were very helpful, especially with keeping video captures as well as the tests. Even though I didn't know before that we could conduct single-day assessments, whereas previously it was a minimum of 7 days_
+
+## Not so good {.smaller}
+
+- _It was complicated to reproduce the examples at the same time they were explained (it is not only a matter of typing more slowly!). And it is interesting to do so it if you want to try some of those examples with your own files and check quickly if everything works in your case. It would help to have the examples in advance to let you make copy-paste (with make the pertinent modifications, of course)_
+
+- _Although I know that harp is in constant development,  in my opinion, the course should be mostly based on the stable release of harp. When using the development branches of harp it is quite uncertain whether what you learnt (and maybe put to work operationally) will remain exactly the same  in the next reference version_
+
+- _I gave up trying to code with Andrew and Alex, but rather used the time to follow and understand. Having everything online afterwards is great, because now I can go back through everything in the quiet of my office_
+
+## General Comments {.smaller}
+
+- _Although harp has a great potential of use, my knowledge of all harp packages (included external ones) is very limited and takes time to learn. For this reason, and in my particular case, I find it difficult to be able to do things very different from the examples you are showing or to use harp apart from the combination script & configuration_file_
+
+- _Apart from the "lessons" you upload from the course, I do not know if it would be a good idea to sort out some of the examples in a kind of "How to"  section.  To have a cheat sheet for a quick reference to the functions is another idea_
+
+- _It is a great idea to record the presentations and make them available online. I hope this is done in future courses as well!_
+
+
 # [Website](https://harphub.github.io/harp_training_2024/){preview-link="true"}
 
+# The future
 
-# Thanks to our Irish hosts! {background-image="harp-pints.jpeg"}
+## Short-term Priorities {.smaller}
+
+- Maps in shiny app
+
+- Sub hourly lead times for all file formats
+
+- Comparator for thresholds
+
+- Quantile thresholds
+
+- All spatial scores to have methods allowing same workflow as point verification
+
+- On the fly computation in shiny app
+
+- Refactoring verification functions for faster computation with many groups
+
+- Cheatsheets
+
+- Publication
+
+- The Book of harp 1st Ed.
+
+## Longer-term Prospects {.smaller}
+
+- How do we make best use of cloud storage data, e.g. S3?
+
+- Interfaces to parquet, feather / arrow, duckDB
+
+- Interfaces to ODB (1? / 2?) / BUFR
+
+- Ingestion of satellite data
+
+- We would love for people to join the harp development team
+
+- Collaboration requires commitment - nothing can be achieved working on something unfamiliar in 0.5 or 1 pm. 
+
+- Andrew and Alex are happy to guide people around the code
+
+- If not R, C++ preferred, but existing python algorithms could be adopted
+
+- D3 (faster, more interactive) graphics in shiny app?
+
+- Replace shiny with observable framework?
+
+# Thanks to our hosts at Met Éireann! {background-image="harp-pints.jpeg"}
