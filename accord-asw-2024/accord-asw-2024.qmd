@@ -367,7 +367,7 @@ Basic plotting with `plot_field()` and `plot_domain()`
 
 Where to find colour palettes
 
-Using `ggplot()` with `geom_geomraster()`
+Using `ggplot()` with `geom_georaster()`
 
 Faceting and formatting titles
 
