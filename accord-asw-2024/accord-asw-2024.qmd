@@ -98,7 +98,7 @@ ggplot(
     fill = fct_reorder(attendance, rev(count))
   )
 ) + 
-  geom_rect() + 
+  geom_rect(colour = "#333333", linewidth = 2) + 
   coord_polar(theta = "y") + 
   xlim(c(6, 10)) + 
   geom_text(x = 6, y = 0, label = "I\nattended...", size = 12, colour = "#EEEEEE") + 
@@ -129,7 +129,7 @@ ggplot(
     fill = fct_reorder(useful, rev(count))
   )
 ) + 
-  geom_rect() + 
+  geom_rect(colour = "#333333", linewidth = 2) + 
   coord_polar(theta = "y") + 
   xlim(c(6, 10)) + 
   geom_text(x = 6, y = 0, label = "The course\nwas...", size = 12, colour = "#EEEEEE") + 
@@ -161,7 +161,7 @@ ggplot(
     fill = fct_reorder(level, rev(count))
   )
 ) + 
-  geom_rect() + 
+  geom_rect(colour = "#333333", linewidth = 2) + 
   coord_polar(theta = "y") + 
   xlim(c(6, 10)) + 
   geom_text(x = 6, y = 0, label = "The level\nwas...", size = 12, colour = "#EEEEEE") + 
@@ -192,7 +192,7 @@ ggplot(
     fill = fct_reorder(pace, rev(count))
   )
 ) + 
-  geom_rect() + 
+  geom_rect(colour = "#333333", linewidth = 2) + 
   coord_polar(theta = "y") + 
   xlim(c(6, 10)) + 
   geom_text(x = 6, y = 0, label = "The pace\nwas...", size = 12, colour = "#EEEEEE") + 
