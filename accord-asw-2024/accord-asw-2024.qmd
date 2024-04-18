@@ -27,7 +27,7 @@ format:
 
 ---
 
-## The traing course {.center}
+## The training course {.center}
 
 ## 4 - 8 March 2024 :: Dublin, Ireland {background-image="met-eireann.jpg"}
 
