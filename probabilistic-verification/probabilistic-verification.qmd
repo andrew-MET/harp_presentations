@@ -1,0 +1,620 @@
+---
+title: "Probabilistic Verification"
+author: "Andrew Singleton"
+format: 
+  revealjs:
+    theme: simple
+    embed-resources: true
+---
+
+```{r}
+library(harp)
+verif <- readRDS("data/harpPointVerif.harp.T2m.harp.20230801-20230831.harp.meps.rds")
+fcst <- read_point_forecast(
+  dttm       = seq_dttm(2023080100, 2023083100, "1d"),
+  fcst_model = c("meps", "ifsens"),
+  fcst_type  = "eps",
+  parameter  = "T2m", 
+  file_path  = "data/FCTABLE" 
+) |> 
+  scale_param(-273.15, "degC") |> 
+  common_cases()
+
+obs <- read_point_obs(
+  dttm      = unique_valid_dttm(fcst),
+  parameter = "T2m",
+  stations  = unique_stations(fcst),
+  obs_path  = "data/OBSTABLE" 
+) |> 
+  scale_param(-273.15, "degC", col = T2m)
+
+fcst <- join_to_fcst(fcst, obs)
+```
+
+
+# Summary Scores
+
+##
+
+- Hexbins
+- Bias
+- Spread :: Skill (RMSE)
+- Spread :: Skill (STDE)
+- Rank Histogram
+- Continuous Rank Probability Score (CRPS)
+
+# Hexbins
+
+```{r}
+library(dplyr)
+hh <- ens_verify(
+  fcst, T2m, rank_hist = FALSE, crps = FALSE, groupings = NULL, 
+  verify_members = FALSE, num_bins = 50
+)
+```
+
+
+## Directly compare forecasts & observations
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- Like a "scatter" plot
+- Hexagons are equally distributed in all directions
+:::
+
+::: {.column width="50%"}
+```{r, fig.height=8, fig.width=8}
+plot_point_verif(hh, hexbin, filter_by = vars(fcst_model == "meps")) + 
+  scale_fill_viridis_c(trans = "log10", option = "C")
+```
+:::
+
+::::
+
+## Distribution of biases
+
+:::: {.columns}
+
+::: {.column width="50%"}
+<h5>Too cool when it's warm</h5>
+```{r, fig.height=8, fig.width=8}
+hh <- ens_verify(
+  mutate(fcst, across(contains("_mbr"), ~case_when(T2m > 20 ~.x - (T2m - 20) * 0.5, .default = .x))), T2m, 
+  rank_hist = FALSE, crps = FALSE, groupings = NULL, verify_members = FALSE, num_bins = 50
+)
+plot_point_verif(hh, hexbin, filter_by = vars(fcst_model == "meps")) + 
+  scale_fill_viridis_c(trans = "log10", option = "C")
+```
+:::
+
+::: {.column width="50%"}
+<h5>Too warm when it's cooler</h5>
+```{r, fig.height=8, fig.width=8}
+hh <- ens_verify(
+  mutate(fcst, across(contains("_mbr"), ~case_when(T2m < 10 ~.x + (10 - T2m) * 0.5, .default = .x))), T2m, 
+  rank_hist = FALSE, crps = FALSE, groupings = NULL, verify_members = FALSE, num_bins = 50
+)
+plot_point_verif(hh, hexbin, filter_by = vars(fcst_model == "meps")) +
+  scale_fill_viridis_c(trans = "log10", option = "C")
+```
+:::
+
+::::
+
+# Bias
+
+## Bias of the ensemble mean
+
+```{r}
+okabe <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+bb <- ens_verify(
+    fcst, T2m, 
+    rank_hist = FALSE, crps = FALSE, hexbin = FALSE
+)
+
+plot_point_verif(bb, mean_bias, plot_num_cases = FALSE) + 
+  geom_hline(yintercept = 0, colour = "grey60", lwd = 0.25) + 
+  scale_colour_manual(values = okabe)
+```
+
+## Bias of individual members
+```{r}
+library(purrr)
+attrs <- attributes(bb)
+bb <- map_at(
+  bb, 
+  "det_summary_scores", 
+  ~mutate(
+    .x, 
+    type = case_when(!(member %in% "mbr000") ~ "Others", .default = member)
+  )
+)
+attributes(bb) <- attrs
+
+plot_point_verif(
+  bb, bias, "det", colour_by = type, group = member, 
+  facet_by = vars(fcst_model), point_size = 0, line_width = 0.75
+) + 
+  scale_colour_manual(values = c(scales::muted("red"), "grey80")) +
+  geom_line(
+    data = filter(bb$det_summary_scores, member %in% "mbr000"),
+    linewidth = 1.5
+  ) +
+  geom_hline(yintercept = 0, colour = "grey60", lwd = 0.25)
+```
+
+## Improved bias?
+
+```{r}
+fcst_b <- fcst
+fcst_b$new_ifsens <- mutate(
+  fcst$ifsens, 
+  across(
+    matches("mbr00[1-5]"), 
+    ~case_when(
+      between(lead_time, 6, 18) ~.x + 0.25, 
+      .default = .x
+    )
+  )
+)
+
+bbb <- ens_verify(
+    fcst_b, T2m, 
+    rank_hist = FALSE, crps = FALSE, hexbin = FALSE
+)
+
+plot_point_verif(bbb, mean_bias, plot_num_cases = FALSE) + 
+  geom_hline(yintercept = 0, colour = "grey60", lwd = 0.25) + 
+    scale_colour_manual(values = okabe)
+```
+
+## Improved bias?
+```{r}
+attrs <- attributes(bbb)
+bbb <- map_at(
+  bbb, 
+  "det_summary_scores", 
+  ~mutate(
+    .x, 
+    type = case_when(!(member %in% "mbr000") ~ "Others", .default = member)
+  )
+)
+attributes(bbb) <- attrs
+
+plot_point_verif(
+  bbb, bias, "det", colour_by = type, group = member, 
+  facet_by = vars(fcst_model), point_size = 0, line_width = 0.75
+) + 
+  scale_colour_manual(values = c(scales::muted("red"), "grey80")) +
+  geom_line(
+    data = filter(bbb$det_summary_scores, member %in% "mbr000"),
+    linewidth = 1.5
+  ) +
+  geom_hline(yintercept = 0, colour = "grey60", lwd = 0.25)
+```
+
+# Spread :: Skill (RMSE)
+
+##
+
+:::: {.columns}
+
+::: {.column width="50%"}
+<h5>What is skill (RMSE)?</h5>
+
+$\sqrt{\frac{1}{N}\sum\limits_{1}^{N} \left(\overline{f} - o\right)^{2}}$
+:::
+
+::: {.column width="50%"}
+<h5>What is spread?</h5>
+
+$\sqrt{\frac{1}{N}\sum\limits_{1}^{N} \left(Var\left(f\right)\right)}$
+:::
+
+::::
+
+```{r}
+plot_point_verif(bb, spread_skill, plot_num_cases = FALSE) +
+  geom_hline(yintercept = 0, colour = "grey60", lwd = 0.25) + 
+  scale_colour_manual(values = okabe) + 
+  scale_y_continuous(limits = c(0, 2.25))
+```
+
+##
+
+:::: {.columns}
+
+::: {.column width="50%"}
+<h5>What is skill (STDE)?</h5>
+
+$\sqrt{\frac{1}{NM-1}\sum\limits_{i=1}^{NM} \left(f_{i} - o\right)^{2}}$
+:::
+
+::: {.column width="50%"}
+<h5>What is spread?</h5>
+
+$\sqrt{\frac{1}{N}\sum\limits_{1}^{N} \left(Var\left(f\right)\right)}$
+:::
+
+::::
+
+```{r}
+plot_point_verif(bb, spread_stde, plot_num_cases = FALSE) +
+  geom_hline(yintercept = 0, colour = "grey60", lwd = 0.25) + 
+  scale_colour_manual(values = okabe) + 
+  scale_y_continuous(limits = c(0, 2.25))
+```
+
+## Impact of bias
+
+<h5>RMSE</h5>
+```{r}
+plot_point_verif(bbb, spread_skill, plot_num_cases = FALSE) +
+  geom_hline(yintercept = 0, colour = "grey60", lwd = 0.25) + 
+  scale_colour_manual(values = okabe) + 
+  scale_y_continuous(limits = c(0, 2.25))
+```
+
+## Impact of bias
+
+<h5>STDE</h5>
+```{r}
+plot_point_verif(bbb, spread_stde, plot_num_cases = FALSE) +
+  geom_hline(yintercept = 0, colour = "grey60", lwd = 0.25) + 
+  scale_colour_manual(values = okabe) + 
+  scale_y_continuous(limits = c(0, 2.25))
+```
+
+# Rank histograms
+
+## Rank observations by ensemble member
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- Shows dispersion of ensemble
+- Aiming for normalized frequency of 1 for each rank
+:::
+
+```{r}
+rh <- ens_rank_histogram(fcst, T2m)
+rh$ens_summary_scores <- mutate(
+  rh$ens_summary_scores, dispersion = "Under-dispersed"
+)
+rh_good <- rh
+rh_good$ens_summary_scores <- rh_good$ens_summary_scores |> 
+  mutate(
+    rank_histogram = lapply(rank_histogram, \(x) mutate(x, rank_count = 1000)),
+    dispersion     = "Perfect Dispersion"
+  )
+rh_over <- ens_rank_histogram(
+  jitter_fcst(fcst, \(x) x + rnorm(length(x), 0, 1.5)), T2m
+)
+rh_over$ens_summary_scores <- mutate(
+  rh_over$ens_summary_scores, dispersion = "Over-dispersed"
+)
+rh_plus_bias <- ens_rank_histogram(
+  jitter_fcst(fcst, \(x) x + 0.5), T2m
+)
+rh_plus_bias$ens_summary_scores <- mutate(
+  rh_plus_bias$ens_summary_scores, dispersion = "Positive Bias"
+)
+rh_minus_bias <- ens_rank_histogram(
+  jitter_fcst(fcst, \(x) x - 0.5), T2m
+)
+rh_minus_bias$ens_summary_scores <- mutate(
+  rh_minus_bias$ens_summary_scores, dispersion = "Negative Bias"
+)
+
+rh <- bind_point_verif(rh, rh_good, rh_over, rh_plus_bias, rh_minus_bias)
+
+rh$ens_summary_scores$dispersion <- factor(
+  rh$ens_summary_scores$dispersion,
+  levels = c(
+    "Perfect Dispersion", "Under-dispersed", "Over-dispersed", 
+    "Negative Bias", "Positive Bias"
+  )
+)
+```
+
+
+::: {.column width="50%"}
+```{r, fig.height=12}
+plot_point_verif(
+  rh, 
+  normalized_rank_histogram, 
+  facet_by        = vars(dispersion), 
+  filter_by       = vars(fcst_model == "meps"), 
+  num_facet_cols  = 1,
+  legend_position = "none",
+  plot_title      = "none",
+  plot_subtitle   = "none", 
+  plot_caption    = "none" 
+) + 
+  scale_fill_manual(values = okabe[2]) + 
+  theme(
+    text = element_text(size = 18),
+    strip.text = element_text(size = 22)
+  )
+```
+:::
+
+::::
+
+# Continuous Rank Probability Score (CRPS)
+
+## Mean difference between ensemble CDF and observations
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- Area between forecast CDF and observed step function
+- Averaged over each case
+- Equivalent to mean absolute error for deterministic
+:::
+
+::: {.column width="50%"}
+```{r, fig.height=10}
+crps_fcst <- data.frame(x = qnorm(seq(0.01, 0.99, 0.01), 0, 0.5), y = 1:99)
+crps_obs  <- data.frame(
+  x = c(min(crps_fcst$x), 0, 0, max(crps_fcst$x)), 
+  y = c(1, 1, 99, 99)  
+)
+ggplot(crps_fcst, aes(x, y)) + 
+  geom_line(colour = "red", lwd = 2) + 
+  geom_ribbon(aes(xmin = x, xmax = 0), alpha = 0.5, fill = "red") +
+  geom_line(data = crps_obs, colour = "black", lwd = 2) +
+  coord_cartesian(xlim = c(-2, 2), expand = FALSE) + 
+  theme_void() + 
+  theme(
+    panel.background = element_rect(colour = "grey30", fill = "white", size = 1), 
+    plot.margin = unit(c(1, 1, 1, 1), "cm")
+  )
+```
+:::
+
+::::
+
+## Bias is a component of CRPS
+
+```{r}
+crps_fcst <- bind_rows(
+  mutate(crps_fcst, x = x - max(x) - 0.5, type = "Negative Bias"), 
+  mutate(crps_fcst, x = x + max(x) + 0.5, type = "Positive Bias")
+)
+crps_obs$x <- c(min(crps_fcst$x) * 2 - 0.5, 0, 0, max(crps_obs$x) * 2 + 0.5)
+
+ggplot(crps_fcst, aes(x, y)) + 
+    geom_line(colour = "red", lwd = 2) + 
+    geom_ribbon(aes(xmin = x, xmax = 0), alpha = 0.5, fill = "red") +
+    geom_line(data = crps_obs, colour = "black", lwd = 2) +
+    coord_cartesian(xlim = c(-5, 5), expand = FALSE) + 
+    facet_wrap(~type) +
+    theme_void() + 
+    theme(
+        panel.background = element_rect(colour = "grey30", fill = "white", size = 1), 
+        plot.margin = unit(c(1, 1, 1, 1), "cm"),
+        strip.clip = "off",
+        strip.text = element_text(size = 18)
+    )
+```
+
+## Impact of bias
+
+- 1$^\circ$ positive bias, 1$^\circ$ negative bias
+
+```{r}
+crps_fcst <- fcst["meps"]
+crps_fcst[["+ve bias"]] <- jitter_fcst(fcst$meps, \(x) x + 1)
+crps_fcst[["-ve bias"]] <- jitter_fcst(fcst$meps, \(x) x - 1.5)
+
+crps_verif <- ens_crps(crps_fcst, T2m)
+
+plot_point_verif(crps_verif, crps, plot_num_cases = FALSE) + 
+  scale_color_manual(values = okabe[c(5, 7, 3)])
+```
+
+# Threshold Scores
+
+# Brier Score
+
+## Mean Square Error in probability space for a given threshold
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- $BS=\frac{1}{N}\sum\limits_{i=1}^{N}\left(f_i-o_i\right)^2$
+- Range [0, $\infty$]
+- Perfect score = 0
+- Sensitive to event rarity
+:::
+
+::: {.column width="50%"}
+```{r, fig.height=11}
+bs <- ens_brier(fcst, T2m, thresholds = c(15, 28))
+plot_point_verif(
+  bs, brier_score, facet_by = vars(threshold), line_width = 2, point_size = 3, 
+  num_facet_cols = 1
+) + 
+  scale_colour_manual(values = okabe) + 
+  geom_hline(yintercept = 0, colour = "grey60", lwd = 0.5) +
+  theme_bw(base_size = 18) +
+  theme(legend.position = "bottom")
+```
+:::
+
+::::
+
+## Brier Skill score
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- Compares Brier Score with a reference (usually sample climatology)
+- $BSS=1-\frac{BS}{BS_{ref}}$
+- Range [$-\infty$, 1]
+- $<=0$ -> No skill
+- 1 -> Perfect skill
+- Reduces to $-\infty$ when there are no events
+:::
+
+::: {.column width="50%"}
+```{r, fig.height=12}
+bs <- ens_brier(fcst, T2m, thresholds = c(15, 28))
+plot_point_verif(
+  bs, brier_skill_score, facet_by = vars(threshold), line_width = 2, point_size = 3, 
+  num_facet_cols = 1, facet_scales = "free_y"
+) + 
+  scale_colour_manual(values = okabe) + 
+  geom_hline(yintercept = 0, colour = "grey60", lwd = 0.5) +
+  theme_bw(base_size = 18) +
+  theme(legend.position = "bottom")
+```
+:::
+
+::::
+
+# Reliability
+
+## Compares forecast probability with observed frequency
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- With what frequency did the event occur for a given forecast probability?
+- Observed frequency should equal forecast probability
+- Easy to interpret and communicate
+- Difficult to reduce to a single number
+:::
+
+::: {.column width="50%"}
+```{r, fig.height=11}
+rel <- ens_reliability(fcst, T2m, thresholds = c(15, 20))
+plot_point_verif(
+  rel, 
+  reliability, 
+  facet_by       = vars(threshold, lead_time), 
+  filter_by      = vars(lead_time %in% c(12, 18)),
+  num_facet_cols = 2,
+  line_width     = 2 
+) + 
+  scale_colour_manual(values = okabe) + 
+  theme_bw(base_size = 18) + 
+  theme(legend.position = "bottom")
+```
+
+:::
+
+::::
+
+# Relative / Receiver Operating Characteristic
+
+## Compares Hit Rate with False Alarm Rate
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- Given that the event occurred, how did the forecast do for each probability?
+- $HR=\frac{H}{H+M}$
+- $FAR=\frac{FA}{FA + CR}$
+- Top left is best
+- Can be reduced to area under the ROC curve
+:::
+
+::: {.column width="50%"}
+```{r, fig.height=11}
+roc <- ens_roc(fcst, T2m, thresholds = c(15, 20))
+plot_point_verif(
+  roc, 
+  roc, 
+  facet_by       = vars(threshold, lead_time), 
+  filter_by      = vars(lead_time %in% c(12, 18)),
+  num_facet_cols = 2,
+  line_width     = 2,
+  point_size     = 3 
+) + 
+  scale_colour_manual(values = okabe) + 
+  theme_bw(base_size = 18) + 
+  theme(legend.position = "bottom")
+```
+:::
+
+::::
+
+## Area under ROC curve summarises
+
+```{r, fig.height=8}
+plot_point_verif(
+  roc, 
+  roc_area,
+  facet_by = vars(threshold),
+  num_facet_cols = 2, 
+  line_width = 1.5
+) + 
+  scale_colour_manual(values = okabe) + 
+  geom_hline(yintercept = 0, colour = "grey60", lwd = 0.5) +
+  theme_bw(base_size = 18) + 
+  theme(legend.position = "bottom")
+```
+
+# Brier Score Decomposition
+
+## Reliability, Resolution and Uncertainty
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- $BS_{rel}-BS_{res}+BS_{unc}$
+- Perfect $BS_{rel} = 0$
+- Perfect $BS_{res}=BS_{unc}$
+- $BS_{unc}$ is a function of the observations only
+:::
+
+::: {.column width="50%"}
+```{r, fig.height=12}
+bs <- ens_brier(fcst, T2m, thresholds = c(15, 20))
+plot_point_verif(
+  bs, brier_score_decomposition, facet_by = vars(threshold), line_width = 2, point_size = 3, 
+  num_facet_cols = 1, facet_scales = "free_y"
+) + 
+  scale_colour_manual(values = okabe) + 
+  geom_hline(yintercept = 0, colour = "grey60", lwd = 0.5) +
+  theme_bw(base_size = 18) +
+  theme(legend.position = "bottom")
+```
+
+:::
+
+::::
+
+# Economic value
+
+## User oriented score
+
+:::: {.columns}
+
+::: {.column width="50%"}
+- For what cost/loss ratios is the ensemble better than climatology
+- Usually sample climatology
+:::
+
+::: {.column width="50%"}
+```{r, fig.height=11}
+val <- ens_value(fcst, T2m, thresholds = c(15, 20))
+plot_point_verif(
+  val, 
+  economic_value, 
+  facet_by       = vars(threshold, lead_time), 
+  filter_by      = vars(lead_time %in% c(12, 18)),
+  num_facet_cols = 2,
+  line_width     = 2,
+  point_size     = 3 
+) + 
+  scale_colour_manual(values = okabe) + 
+  theme_bw(base_size = 18) + 
+  theme(legend.position = "bottom")
+```
+:::
+
+::::
