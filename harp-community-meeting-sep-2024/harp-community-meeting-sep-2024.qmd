@@ -19,7 +19,7 @@ Deterministic or ensemble scores are computed depending on the data.
 ## Helper functions
 
 - Default groupings and error checking are specified using the `defaults` 
-argument with the help of `make_verif_defualts()`. 
+argument with the help of `make_verif_defaults()`. 
 
 - Parameter names, thresholds, comparators, and scaling as well as parameter 
 specific error checking and groupings are specified with the `params` argument 
