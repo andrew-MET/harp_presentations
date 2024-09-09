@@ -1,0 +1,226 @@
+---
+title: "harp's new functions for production"
+author: "Andrew Singleton"
+format: 
+  revealjs:
+    theme: [default, custom.scss]
+    embed-resources: true
+    code-line-numbers: false
+---
+
+# One function to rule them all
+
+## Main verification function
+
+`run_point_verif()` runs a point verification task for one or more parameters. 
+It reads forecasts and observations from files and computes verification scores. 
+Deterministic or ensemble scores are computed depending on the data.
+
+## Helper functions
+
+- Default groupings and error checking are specified using the `defaults` 
+argument with the help of `make_verif_defualts()`. 
+
+- Parameter names, thresholds, comparators, and scaling as well as parameter 
+specific error checking and groupings are specified with the `params` argument 
+with the the help of `make_verif_param()`. 
+
+# Defaults
+
+## Using helper functions
+
+```{r}
+library(harp)
+```
+
+```{r, eval=FALSE, echo=TRUE}
+make_verif_defaults(
+  verif_groups = ...,
+  obs_error_sd = ...
+)
+```
+
+There's also a helper function for defining groupings
+  
+```{r, eval=FALSE, echo=TRUE}
+make_verif_groups(
+  time_groups = ...,
+  groups      = ...
+)
+```
+
+## Example defaults
+
+```{r, echo=TRUE}
+make_verif_defaults(
+  verif_groups = make_verif_groups(
+    time_groups = c("lead_time", "valid_hour"), 
+    groups      = c("fcst_cycle", "stn_group")
+  ),
+  obs_error_sd = 6
+)
+```
+
+# Parameter definitions
+
+## 
+
+```{r, echo=TRUE, eval=FALSE}
+make_verif_param(
+  param,
+  fcst_param          = NULL,
+  fcst_scaling        = NULL,
+  fcst_jitter_func    = NULL,
+  obs_param           = NULL,
+  obs_scaling         = NULL,
+  obs_min             = NULL,
+  obs_max             = NULL,
+  obs_error_sd        = NULL,
+  verif_groups        = NULL,
+  verif_thresholds    = NULL,
+  verif_comparator    = "ge",
+  verif_comp_inc_low  = TRUE,
+  verif_comp_inc_high = TRUE,
+  verif_circle        = NULL,
+  verif_members       = TRUE,
+  vertical_coordinate = NA_character_
+)
+```
+
+## Example parameter
+
+```{r, echo=TRUE, eval=FALSE}
+make_verif_param(
+    "2m Temperature",
+    fcst_param          = "T2m",
+    fcst_scaling        = make_scaling(-273.15, "degC"), 
+    obs_param           = "T2m",
+    obs_scaling         = make_scaling(-273.15, "degC"),
+    obs_min             = 223, 
+    obs_max             = 333, 
+    obs_error_sd        = 6, 
+    verif_thresholds    = list(
+      c(-30, seq(-20, 30, 5)), 
+      c(-Inf, -30, seq(-20, 30, 5), Inf)
+    ),
+    verif_comparator    = c("ge", "between"), 
+    verif_comp_inc_low  = TRUE,
+    verif_comp_inc_high = FALSE
+  )
+```
+
+## Example parameter
+
+```{r}
+make_verif_param(
+    "2m Temperature",
+    fcst_param          = "T2m",
+    fcst_scaling        = make_scaling(-273.15, "degC"), 
+    obs_param           = "T2m",
+    obs_scaling         = make_scaling(-273.15, "degC"),
+    obs_min             = 223, 
+    obs_max             = 333, 
+    obs_error_sd        = 6, 
+    verif_thresholds    = list(
+      c(-30, seq(-20, 30, 5)), 
+      c(-Inf, -30, seq(-20, 30, 5), Inf)
+    ),
+    verif_comparator    = c("ge", "between"), 
+    verif_comp_inc_low  = TRUE,
+    verif_comp_inc_high = FALSE
+  )
+```
+
+## `harp_verif_param`s can be concatenated
+
+```{r, echo=TRUE, eval=FALSE}
+params <- c(
+  make_verif_param("2m Temperature", ...),
+  make_verif_param("10m Wind Speed", ...)
+)
+```
+
+# Running a verification
+
+## The function
+
+```{r, echo=TRUE, eval=FALSE}
+run_point_verif(
+  dttm,
+  fcst_model,
+  params,
+  lead_time            = seq(0, 48, 3),
+  members              = NULL,
+  lags                 = "0s",
+  stations             = NULL,
+  station_groups       = NULL,
+  main_fcst_model      = NULL,
+  ens_mean_as_det      = FALSE,
+  dttm_rounding        = NULL,
+  dttm_rounding_dirn   = c("nearest", "up", "down"),
+  dttm_rounding_offset = 0,
+  fcst_path            = getwd(),
+  fcst_template        = "fctable",
+  fcst_format          = "fctable",
+  obs_path             = getwd(),
+  obs_template         = "obstable",
+  obs_format           = "obstable",
+  out_path             = NULL,
+  out_template         = "point_verif",
+  out_format           = "rds",
+  defaults             = make_verif_defaults(),
+  return_data          = TRUE
+)
+```
+
+## Main forecast model
+
+- To speed up data reading a "main" model can be specified
+- Only station IDs that exist for this model will be read for other forecast models
+- An initial step identifying common cases is still done to minimize memory usage
+
+## Rounding date-times
+
+- For grouping by `valid_dttm`
+- You may not want every time point - output too noisy
+- `dttm_rounding` rounds all `valid_dttm` to nearest multiple
+  - Could be e.g. `"1d"`, `"12h"`, `"6h"` etc.
+
+## Rounding date-times
+
+- `dttm_rounding_dirn` controls how the times are aggregated
+  - `"nearest"` is centred on `dttm_rounding`
+  - `"up"` is always times in the window up to and including `dttm_rounding`
+  - `"down"` is always values in the window starting at `dttm_rounding`
+
+## Rounding date-times
+
+- `dttm_rounding_offset` offsets the value of `dttm_rounding`. 
+  - If `dttm_rounding = "1d"` the aggregation will be centred on 00 UTC.
+  - With `dttm_rounding_offset = "12h"` the aggregation will be centred on 12 UTC
+  
+# Configuration and Running
+
+## Configuration file
+
+- Currently there is no configuration file
+- Should it be YAML à la ACCORD verification scripts?
+- What variables should be included
+
+## Running from shell
+
+- Experimental script to be run with RScript
+- Shell script to call R script
+- Script will always take date-times and model names
+- Other options will override what is specified in configuration file
+
+# Availability
+
+## harp repository
+
+- The new functions are part of the __harp__ package
+- Combine functions from _harpCore_, _harpIO_ and _harpPoint_
+- Currently in _develop_ branch
+- `verify_spatial()` to be moved to __harp__ as `run_spatial_verif()`?
+  - Better separation of concerns for packages
+  
