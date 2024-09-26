@@ -1,0 +1,333 @@
+---
+title: "harp for AROME-Arctic"
+author: "Andrew Singleton"
+format: 
+  revealjs:
+    theme: [default, custom.scss]
+    embed-resources: true
+    code-line-numbers: false
+---
+# A brief introduction to harp
+
+## 
+
+- harp is a set of packages for the programming language R.
+- It can read data from multiple file formats - but everything has the same 
+structure once read in. 
+- Any sort of data analysis is possible (maybe with a bit of work!)
+- Verification functionality is built in
+  - Verification at point locations for deterministic and ensemble forecasts
+  - Spatial verification for deterministic (and limited functionality for ensembles)
+- Extensive plotting capabilities (with ggplot)
+
+## Displaying results
+
+- A customisable web app
+- Shows all scores
+- Dropdowns are populated depending on the data
+
+## {.center}
+
+::: {.r-fit-text}
+[AROME-Arctic verification](https://verification.met.no/aa-verif/) 
+:::
+
+# Station Groups
+
+```{r read-some-stations}
+library(harpIO)
+library(dplyr)
+library(harpVis)
+
+stns <- read_point_forecast(
+  20240801, "AA", "T2m", 0, 
+  file_path = "/lustre/storeB/users/andrewts/arome_arctic_verif/FCTABLE",
+  meta_only = TRUE,
+  get_lat_and_lon = TRUE
+) |> 
+  join_station_groups(read.csv("/home/andrewts/R-projects/harp_presentations/arome-arctic-harp/station_groups.csv"))
+
+dom <- harpIO:::get_domain_netcdf(
+  "/lustre/storeB/immutable/archive/projects/metproduction/DNMI_AROME_ARCTIC/2024/09/01/arome_arctic_det_2_5km_20240901T00Z.nc", 
+  netcdf_opts()
+)
+
+countries <- get_map(dom)
+stns <- geo_reproject(stns, dom)
+```
+
+## All
+
+```{r plot-all-stations, dev.args=list(bg="transparent")}
+ggplot(distinct(select(stns, x, y, model_elevation)), aes(x, y)) +
+  geom_polygon(aes(group = group), countries, fill = "grey", colour = "grey30") +
+  geom_point(aes(colour = model_elevation)) +
+  scale_colour_gradientn("m", colours = terrain.colors(255), limits = c(0, 1310)) +
+  coord_equal(expand = FALSE) +
+  theme_harp_map() + 
+  theme(
+    panel.background  = element_rect(fill = "#CCCCFF"),
+    plot.background   = element_rect(fill = "transparent", colour = "transparent"), 
+    legend.background = element_rect(fill = "transparent"), 
+    legend.text       = element_text(colour = "white"), 
+    legend.title      = element_text(colour = "white")
+  )
+```
+
+## Coast
+
+```{r plot-coast-stations, dev.args=list(bg="transparent")}
+ggplot(filter(stns, station_group == "Coast"), aes(x, y)) +
+  geom_polygon(aes(group = group), countries, fill = "grey", colour = "grey30") +
+  geom_point(aes(colour = model_elevation)) +
+  scale_colour_gradientn("m", colours = terrain.colors(255), limits = c(0, 1310)) +
+  coord_equal(expand = FALSE) +
+  theme_harp_map() + 
+  theme(
+    panel.background  = element_rect(fill = "#CCCCFF"),
+    plot.background   = element_rect(fill = "transparent", colour = "transparent"), 
+    legend.background = element_rect(fill = "transparent"), 
+    legend.text       = element_text(colour = "white"), 
+    legend.title      = element_text(colour = "white")
+  )
+```
+
+## Coast Norway
+
+```{r plot-coast-norway-stations, dev.args=list(bg="transparent")}
+ggplot(filter(stns, station_group == "Coast Norway"), aes(x, y)) +
+  geom_polygon(aes(group = group), countries, fill = "grey", colour = "grey30") +
+  geom_point(aes(colour = model_elevation)) +
+  scale_colour_gradientn("m", colours = terrain.colors(255), limits = c(0, 1310)) +
+  coord_equal(expand = FALSE) +
+  theme_harp_map() + 
+  theme(
+    panel.background  = element_rect(fill = "#CCCCFF"),
+    plot.background   = element_rect(fill = "transparent", colour = "transparent"), 
+    legend.background = element_rect(fill = "transparent"), 
+    legend.text       = element_text(colour = "white"), 
+    legend.title      = element_text(colour = "white")
+  )
+```
+
+## North Norway Pure Coast
+
+```{r plot-north-norway-pure-coast-stations, dev.args=list(bg="transparent")}
+ggplot(filter(stns, station_group == "North Norway Pure Coast"), aes(x, y)) +
+  geom_polygon(aes(group = group), countries, fill = "grey", colour = "grey30") +
+  geom_point(aes(colour = model_elevation)) +
+  scale_colour_gradientn("m", colours = terrain.colors(255), limits = c(0, 1310)) +
+  coord_equal(expand = FALSE) +
+  theme_harp_map() + 
+  theme(
+    panel.background  = element_rect(fill = "#CCCCFF"),
+    plot.background   = element_rect(fill = "transparent", colour = "transparent"), 
+    legend.background = element_rect(fill = "transparent"), 
+    legend.text       = element_text(colour = "white"), 
+    legend.title      = element_text(colour = "white")
+  )
+```
+
+## Mountain
+
+```{r plot-mountain-stations, dev.args=list(bg="transparent")}
+ggplot(filter(stns, station_group == "Mountain"), aes(x, y)) +
+  geom_polygon(aes(group = group), countries, fill = "grey", colour = "grey30") +
+  geom_point(aes(colour = model_elevation)) +
+  scale_colour_gradientn("m", colours = terrain.colors(255), limits = c(0, 1310)) +
+  coord_equal(expand = FALSE) +
+  theme_harp_map() + 
+  theme(
+    panel.background  = element_rect(fill = "#CCCCFF"),
+    plot.background   = element_rect(fill = "transparent", colour = "transparent"), 
+    legend.background = element_rect(fill = "transparent"), 
+    legend.text       = element_text(colour = "white"), 
+    legend.title      = element_text(colour = "white")
+  )
+```
+
+## North Norway Mountain
+
+```{r plot-north-norway-mountain-stations, dev.args=list(bg="transparent")}
+ggplot(filter(stns, station_group == "North Norway Mountain"), aes(x, y)) +
+  geom_polygon(aes(group = group), countries, fill = "grey", colour = "grey30") +
+  geom_point(aes(colour = model_elevation)) +
+  scale_colour_gradientn("m", colours = terrain.colors(255), limits = c(0, 1310)) +
+  coord_equal(expand = FALSE) +
+  theme_harp_map() + 
+  theme(
+    panel.background  = element_rect(fill = "#CCCCFF"),
+    plot.background   = element_rect(fill = "transparent", colour = "transparent"), 
+    legend.background = element_rect(fill = "transparent"), 
+    legend.text       = element_text(colour = "white"), 
+    legend.title      = element_text(colour = "white")
+  )
+```
+
+## North Norway
+
+```{r plot-north-norway-stations, dev.args=list(bg="transparent")}
+ggplot(filter(stns, station_group == "North Norway"), aes(x, y)) +
+  geom_polygon(aes(group = group), countries, fill = "grey", colour = "grey30") +
+  geom_point(aes(colour = model_elevation)) +
+  scale_colour_gradientn("m", colours = terrain.colors(255), limits = c(0, 1310)) +
+  coord_equal(expand = FALSE) +
+  theme_harp_map() + 
+  theme(
+    panel.background  = element_rect(fill = "#CCCCFF"),
+    plot.background   = element_rect(fill = "transparent", colour = "transparent"), 
+    legend.background = element_rect(fill = "transparent"), 
+    legend.text       = element_text(colour = "white"), 
+    legend.title      = element_text(colour = "white")
+  )
+```
+
+## North Norway Fjord Regions
+
+```{r plot-north-norway-fjord-regions-stations, dev.args=list(bg="transparent")}
+ggplot(filter(stns, station_group == "North Norway Fjord Regions"), aes(x, y)) +
+  geom_polygon(aes(group = group), countries, fill = "grey", colour = "grey30") +
+  geom_point(aes(colour = model_elevation)) +
+  scale_colour_gradientn("m", colours = terrain.colors(255), limits = c(0, 1310)) +
+  coord_equal(expand = FALSE) +
+  theme_harp_map() + 
+  theme(
+    panel.background  = element_rect(fill = "#CCCCFF"),
+    plot.background   = element_rect(fill = "transparent", colour = "transparent"), 
+    legend.background = element_rect(fill = "transparent"), 
+    legend.text       = element_text(colour = "white"), 
+    legend.title      = element_text(colour = "white")
+  )
+```
+
+## North Norway Inland
+
+```{r plot-north-norway-inland-stations, dev.args=list(bg="transparent")}
+ggplot(filter(stns, station_group == "North Norway Inland"), aes(x, y)) +
+  geom_polygon(aes(group = group), countries, fill = "grey", colour = "grey30") +
+  geom_point(aes(colour = model_elevation)) +
+  scale_colour_gradientn("m", colours = terrain.colors(255), limits = c(0, 1310)) +
+  coord_equal(expand = FALSE) +
+  theme_harp_map() + 
+  theme(
+    panel.background  = element_rect(fill = "#CCCCFF"),
+    plot.background   = element_rect(fill = "transparent", colour = "transparent"), 
+    legend.background = element_rect(fill = "transparent"), 
+    legend.text       = element_text(colour = "white"), 
+    legend.title      = element_text(colour = "white")
+  )
+```
+
+## West Norway
+
+```{r plot-west-norway-stations, dev.args=list(bg="transparent")}
+ggplot(filter(stns, station_group == "West Norway"), aes(x, y)) +
+  geom_polygon(aes(group = group), countries, fill = "grey", colour = "grey30") +
+  geom_point(aes(colour = model_elevation)) +
+  scale_colour_gradientn("m", colours = terrain.colors(255), limits = c(0, 1310)) +
+  coord_equal(expand = FALSE) +
+  theme_harp_map() + 
+  theme(
+    panel.background  = element_rect(fill = "#CCCCFF"),
+    plot.background   = element_rect(fill = "transparent", colour = "transparent"), 
+    legend.background = element_rect(fill = "transparent"), 
+    legend.text       = element_text(colour = "white"), 
+    legend.title      = element_text(colour = "white")
+  )
+```
+
+## Norway
+
+```{r plot-norway-stations, dev.args=list(bg="transparent")}
+ggplot(filter(stns, station_group == "Norway"), aes(x, y)) +
+  geom_polygon(aes(group = group), countries, fill = "grey", colour = "grey30") +
+  geom_point(aes(colour = model_elevation)) +
+  scale_colour_gradientn("m", colours = terrain.colors(255), limits = c(0, 1310)) +
+  coord_equal(expand = FALSE) +
+  theme_harp_map() + 
+  theme(
+    panel.background  = element_rect(fill = "#CCCCFF"),
+    plot.background   = element_rect(fill = "transparent", colour = "transparent"), 
+    legend.background = element_rect(fill = "transparent"), 
+    legend.text       = element_text(colour = "white"), 
+    legend.title      = element_text(colour = "white")
+  )
+```
+
+## Norway 2
+
+```{r plot-norway-2-stations, dev.args=list(bg="transparent")}
+ggplot(filter(stns, station_group == "Norway 2"), aes(x, y)) +
+  geom_polygon(aes(group = group), countries, fill = "grey", colour = "grey30") +
+  geom_point(aes(colour = model_elevation)) +
+  scale_colour_gradientn("m", colours = terrain.colors(255), limits = c(0, 1310)) +
+  coord_equal(expand = FALSE) +
+  theme_harp_map() + 
+  theme(
+    panel.background  = element_rect(fill = "#CCCCFF"),
+    plot.background   = element_rect(fill = "transparent", colour = "transparent"), 
+    legend.background = element_rect(fill = "transparent"), 
+    legend.text       = element_text(colour = "white"), 
+    legend.title      = element_text(colour = "white")
+  )
+```
+
+## Svalbard Barents
+
+```{r plot-svalbard-barents-stations, dev.args=list(bg="transparent")}
+ggplot(filter(stns, station_group == "Svalbard Barents"), aes(x, y)) +
+  geom_polygon(aes(group = group), countries, fill = "grey", colour = "grey30") +
+  geom_point(aes(colour = model_elevation)) +
+  scale_colour_gradientn("m", colours = terrain.colors(255), limits = c(0, 1310)) +
+  coord_equal(expand = FALSE) +
+  theme_harp_map() + 
+  theme(
+    panel.background  = element_rect(fill = "#CCCCFF"),
+    plot.background   = element_rect(fill = "transparent", colour = "transparent"), 
+    legend.background = element_rect(fill = "transparent"), 
+    legend.text       = element_text(colour = "white"), 
+    legend.title      = element_text(colour = "white")
+  )
+```
+
+## None
+
+```{r plot-none-stations, dev.args=list(bg="transparent")}
+ggplot(filter(stns, station_group == "None"), aes(x, y)) +
+  geom_polygon(aes(group = group), countries, fill = "grey", colour = "grey30") +
+  geom_point(aes(colour = model_elevation)) +
+  scale_colour_gradientn("m", colours = terrain.colors(255), limits = c(0, 1310)) +
+  coord_equal(expand = FALSE) +
+  theme_harp_map() + 
+  theme(
+    panel.background  = element_rect(fill = "#CCCCFF"),
+    plot.background   = element_rect(fill = "transparent", colour = "transparent"), 
+    legend.background = element_rect(fill = "transparent"), 
+    legend.text       = element_text(colour = "white"), 
+    legend.title      = element_text(colour = "white")
+  )
+```
+
+# Coming Soon
+
+##
+
+- Last 7 days and Last 30 days
+  - To be updated every Thursday
+- Seasonal verification
+- Time series of scores for 12, 24, 36, and 48h forecasts
+- AA-EPS scores
+- monitor switched off?
+
+# Links
+
+##
+
+[AA verification: https://verification.met.no/aa-verif](https://verification.met.no/aa-verif/)
+
+[harp package website](https://harphub.github.io/harp/)
+
+[harp 2024 training website](https://harphub.github.io/harp_training_2024/)
+
+[This presentation: https://andrew-met.github.io/harp_presentations/arome-arctic-harp.html](https://andrew-met.github.io/harp_presentations/arome-arctic-harp.html) 
+
