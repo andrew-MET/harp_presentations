@@ -323,11 +323,8 @@ ggplot(filter(stns, station_group == "None"), aes(x, y)) +
 
 ##
 
-[AA verification: https://verification.met.no/aa-verif](https://verification.met.no/aa-verif/)
-
-[harp package website](https://harphub.github.io/harp/)
-
-[harp 2024 training website](https://harphub.github.io/harp_training_2024/)
-
-[This presentation: https://andrew-met.github.io/harp_presentations/arome-arctic-harp.html](https://andrew-met.github.io/harp_presentations/arome-arctic-harp.html) 
-
+- [AA verification: https://verification.met.no/aa-verif](https://verification.met.no/aa-verif/)
+- [harp package website](https://harphub.github.io/harp/)
+- [harp 2024 training website](https://harphub.github.io/harp_training_2024/)
+- [This presentation: https://andrew-met.github.io/harp_presentations/arome-arctic-harp.html](https://andrew-met.github.io/harp_presentations/arome-arctic-harp.html) 
+- [New feature detection and tracking capabilities](https://harphub.github.io/harpTobac/index.html)
