@@ -65,8 +65,9 @@ hh <- ens_verify(
 
 ::: {.column width="50%"}
 ```{r, fig.height=8, fig.width=8}
-plot_point_verif(hh, hexbin, filter_by = vars(fcst_model == "meps")) + 
-  scale_fill_viridis_c(trans = "log10", option = "C")
+plot_point_verif(
+  hh, hexbin, filter_by = vars(fcst_model == "meps"), hex_trans = "log10"
+)
 ```
 :::
 
@@ -83,8 +84,9 @@ hh <- ens_verify(
   mutate(fcst, across(contains("_mbr"), ~case_when(T2m > 20 ~.x - (T2m - 20) * 0.5, .default = .x))), T2m, 
   rank_hist = FALSE, crps = FALSE, groupings = NULL, verify_members = FALSE, num_bins = 50
 )
-plot_point_verif(hh, hexbin, filter_by = vars(fcst_model == "meps")) + 
-  scale_fill_viridis_c(trans = "log10", option = "C")
+plot_point_verif(
+  hh, hexbin, filter_by = vars(fcst_model == "meps"), hex_trans = "log10"
+) 
 ```
 :::
 
@@ -95,8 +97,9 @@ hh <- ens_verify(
   mutate(fcst, across(contains("_mbr"), ~case_when(T2m < 10 ~.x + (10 - T2m) * 0.5, .default = .x))), T2m, 
   rank_hist = FALSE, crps = FALSE, groupings = NULL, verify_members = FALSE, num_bins = 50
 )
-plot_point_verif(hh, hexbin, filter_by = vars(fcst_model == "meps")) +
-  scale_fill_viridis_c(trans = "log10", option = "C")
+plot_point_verif(
+  hh, hexbin, filter_by = vars(fcst_model == "meps"), hex_trans = "log10"
+)
 ```
 :::
 

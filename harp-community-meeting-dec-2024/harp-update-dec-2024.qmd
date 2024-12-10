@@ -1,0 +1,101 @@
+---
+title: "harp Update - Dec 2024"
+author: "Andrew Singleton"
+format: 
+  revealjs:
+    theme: [default, custom.scss]
+    embed-resources: true
+    code-line-numbers: false
+---
+
+# harpCore
+
+## New functions
+
+`join_multi_groups()` for joining grouping data where rows fall into more than 
+one group
+
+```{r echo=FALSE}
+library(harp)
+library(dplyr)
+```
+
+```{r eval=FALSE, echo=TRUE}
+ff <- join_multi_groups(det_point_df, station_groups)
+ff
+```
+
+
+```{r echo=FALSE}
+ff <- join_multi_groups(det_point_df, station_groups) 
+summarise(ff, station_group = unique(station_group), .by = SID)
+```
+
+<br>
+
+```{r echo=TRUE}
+attr(ff, "multi_groups")
+```
+
+# harpIO
+
+## Testing _Apache Arrow_ with _parquet_
+
+- Alternative to _SQLite_
+- Files are much smaller
+- Reading is much faster [not yet tested on distributed file systems]
+- Writing appears to be faster, but not fully tested
+- Joins between different datasets can be done __before__ collecting - finding 
+common cases and joining observations to forecasts much more memory efficient
+
+## Testing _Apache Arrow_ with _parquet_
+
+- _parquet_ files cannot be appended to, but...
+- _Arrow_ datasets can be
+- The challenge is finding the right balance for partitioning data
+  - don't want too many small files, but...
+  - want datasets to be easily extendable
+- _DuckDB_ also investigated as an alternative.
+  - fully self contained package, so is _extremely_ slow to install
+  - No clear advantages over _Apache Arrow_
+
+# harpPoint
+
+## Memory efficiency
+
+- Many functions very memory hungry
+- Deterministic verification refactored
+- No extra rows for multiple groups
+- Thresholds treated completely separately
+- Easier to add new scores
+- Similar changes will be ported to ensemble verification
+
+# harpVis
+
+## New plot method
+
+- Works on `harp_grid_df` data frames [output of `read_forecast()`, 
+`read_analysis()`, or `read_grid(..., data_frame = TRUE)`]
+- Powered by _ggplot_ so easy to edit / extend plots
+- Defaults to faceting by `valid_dttm` column, but you can choose
+- Data are downsampled by a factor dependent on the total number of pixels in 
+the x-direction, though user modifiable
+
+## Utility functions for plotting
+
+- `censor_low_squish_high()` removes data below the lower limit and "squishes"
+data above the upper limit
+  - Useful for e.g. precipitation plots
+- `abs_range()` returns the absolute range of data
+  - Useful for getting equal limits on colour bars
+  
+  
+# harp
+
+## Work in progress
+
+- Functions for handling configuration files
+- Running scripts
+- Function to set up a skeleton harp project directory with basic configuration
+and run scripts
+

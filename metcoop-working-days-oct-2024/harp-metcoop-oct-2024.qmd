@@ -1,0 +1,63 @@
+---
+title: "--harp--<br>MetCoOp Working Days<br>October 2024"
+author: "Andrew Singleton"
+format: 
+  revealjs:
+    theme: [default, custom.scss]
+    embed-resources: true
+    code-line-numbers: false
+---
+
+# Questionnaire Results
+
+## Votes
+
+```{r q-results-raw}
+library(harpVis)
+library(scico)
+harp_survey <- readRDS("harp_survey.rds")
+ggplot(harp_survey, aes(x = importance, y = score, fill = factor(importance))) + 
+  geom_col() + 
+  facet_wrap(~question, nrow = 2) + 
+  scale_x_reverse() + 
+  scale_fill_scico_d(palette = "batlow") + 
+  coord_cartesian(expand = FALSE, xlim = c(5.75, 0.25), ylim = c(0, 6.5)) + 
+  guides(fill = "none") + 
+  labs(x = "Importance", y = "Votes") +
+  theme_harp_black() +
+  theme(
+    plot.background = element_rect(fill = "#333333"),
+    panel.background = element_rect(fill = "#333333"),
+    strip.text = element_text(margin = margin(4.4, 0, 4.4, 0, unit = "points"))
+  )
+```
+
+## Votes weighted by importance
+
+```{r q-results-weighted}
+library(dplyr)
+library(forcats)
+ggplot(
+  mutate(harp_survey, total = sum(weighted_score), .by = question),
+  aes(
+    y    = fct_reorder(question, total), 
+    x    = weighted_score, 
+    fill = factor(importance)
+  )
+) + 
+  geom_col() +
+  scale_fill_scico_d(palette = "batlow", guide = guide_legend(reverse = TRUE)) +
+  coord_cartesian(expand = FALSE, xlim = c(0, 42), ylim = c(0.25, 7.75)) +
+  labs(y = NULL, x = "Weighted Votes", fill = "Importance") +
+  theme_harp_black() +
+  theme(
+    plot.background = element_rect(fill = "#333333"),
+    panel.background = element_rect(fill = "#333333"),
+    strip.text = element_text(margin = margin(4.4, 0, 4.4, 0, unit = "points")),
+    legend.background = element_rect(fill = "#333333"),
+    legend.key = element_rect(fill = "#333333")
+    #legend.box.background = element_rect(fill = "#333333", colour = NULL)
+  )
+   
+```
+
