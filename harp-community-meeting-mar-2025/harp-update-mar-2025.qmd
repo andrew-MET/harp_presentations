@@ -1,0 +1,338 @@
+---
+title: "harp update March 2025"
+author: "Andrew Singleton"
+format: 
+  revealjs:
+    theme: [default, custom.scss]
+    embed-resources: true
+    code-line-numbers: false
+---
+
+# harpIO
+
+## Arrow datasets
+
+- More experimentation done
+- Only for local disk
+- Inline vs offline wrangling
+- Timings vs SQLite
+- Still some edge cases to make sure to catch
+
+## Timings for data as is
+
+```{r, echo=FALSE, fig.width=12, fig.align='center'}
+library(tibble)
+benchmarks <- tribble(
+  ~`Time Period`, ~Format, ~Time, ~Decumulate, ~Description,
+  "1 month", "Arrow dataset inline", 37.3, TRUE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+  "1 week", "Arrow dataset inline", 9.5, TRUE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+  "1 day", "Arrow dataset inline", 3.8, TRUE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+  
+  "1 month", "Arrow dataset offline", 55.3, TRUE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+  "1 week", "Arrow dataset offline", 15.2, TRUE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+  "1 day", "Arrow dataset offline", 7.1, TRUE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+  
+  "1 month", "SQLite", 82.3, TRUE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+  "1 week", "SQLite", 20.9, TRUE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+  "1 day", "SQLite", 5.1, TRUE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+  
+  "1 month", "Arrow dataset inline", 27.7, FALSE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+  "1 week", "Arrow dataset inline", 8.4, FALSE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+  "1 day", "Arrow dataset inline", 2.7, FALSE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+
+  "1 month", "Arrow dataset offline", 20.7, FALSE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+  "1 week", "Arrow dataset offline", 6.4, FALSE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+  "1 day", "Arrow dataset offline", 3.5, FALSE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+
+  "1 month", "SQLite", 76.5, FALSE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+  "1 week", "SQLite", 18.8, FALSE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+  "1 day", "SQLite", 4.5, FALSE, "30 member lagged ensemble, 5 members every hour, 4 cycles / day",
+  
+  "1 month", "SQLite", 4.4, FALSE, "deterministic, 8 cycles / day",
+  "1 week", "SQLite", 1.9, FALSE, "deterministic, 8 cycles / day",
+  "1 day", "SQLite", 1, FALSE, "deterministic, 8 cycles / day",
+
+  "1 month", "SQLite", 5, TRUE, "deterministic, 8 cycles / day",
+  "1 week", "SQLite", 2, TRUE, "deterministic, 8 cycles / day",
+  "1 day", "SQLite", 1, TRUE, "deterministic, 8 cycles / day",
+  
+  "1 month", "Arrow dataset inline", 2.5, FALSE, "deterministic, 8 cycles / day",
+  "1 week", "Arrow dataset inline", 0.7, FALSE, "deterministic, 8 cycles / day",
+  "1 day", "Arrow dataset inline", 0.4, FALSE, "deterministic, 8 cycles / day",
+
+  "1 month", "Arrow dataset inline", 3.9, TRUE, "deterministic, 8 cycles / day",
+  "1 week", "Arrow dataset inline", 1.5, TRUE, "deterministic, 8 cycles / day",
+  "1 day", "Arrow dataset inline", 0.7, TRUE, "deterministic, 8 cycles / day",
+  
+  "1 month", "Arrow dataset offline", 1.9, FALSE, "deterministic, 8 cycles / day",
+  "1 week", "Arrow dataset offline", 0.7, FALSE, "deterministic, 8 cycles / day",
+  "1 day", "Arrow dataset offline", 0.4, FALSE, "deterministic, 8 cycles / day",
+
+  "1 month", "Arrow dataset offline", 3.9, TRUE, "deterministic, 8 cycles / day",
+  "1 week", "Arrow dataset offline", 1.4, TRUE, "deterministic, 8 cycles / day",
+  "1 day", "Arrow dataset offline", 0.9, TRUE, "deterministic, 8 cycles / day"
+  
+)
+
+library(ggplot2)
+library(dplyr)
+library(forcats)
+ggplot(
+  filter(benchmarks, !Decumulate), 
+  aes(fct_relevel(`Time Period`, "1 month", after = Inf), Time, fill = Format)
+) + 
+  geom_col(position = position_dodge(), colour = "black") + 
+  facet_wrap(~Description, scales = "free_y") + 
+  harpVis::theme_harp_black() + 
+  scale_fill_brewer(palette = "Dark2") + 
+  theme(
+    plot.background = element_rect(fill = "#222222"), 
+    panel.background = element_rect(fill = "#222222"), 
+    legend.background = element_rect(fill = "#222222")
+  ) +
+  labs(
+    x = "Time Period",
+    y = "Execution time [s]"
+  )
+```
+
+## Timings for accumulated data
+
+```{r, echo=FALSE, fig.width=12, fig.align='center'}
+ggplot(
+  filter(benchmarks, Decumulate), 
+  aes(fct_relevel(`Time Period`, "1 month", after = Inf), Time, fill = Format)
+) + 
+  geom_col(position = position_dodge(), colour = "black") + 
+  facet_wrap(~Description, scales = "free_y") + 
+  harpVis::theme_harp_black() + 
+  scale_fill_brewer(palette = "Dark2") + 
+  theme(
+    plot.background = element_rect(fill = "#222222"), 
+    panel.background = element_rect(fill = "#222222"), 
+    legend.background = element_rect(fill = "#222222")
+  ) +
+  labs(
+    x = "Time Period",
+    y = "Execution time [s]"
+  )
+```
+
+## Pros and Cons
+
+&check; Much faster than SQLite
+
+&check; Takes about 1/3 of disk space of SQLite
+
+&check; No need for indexes
+
+&check; Lends itself to cloud storage (e.g. S3)
+
+
+<hr>
+
+&cross; Offline wrangling seems to steal memory that isn't given back
+
+&cross; First access to dataset is slow on distributed file systems
+
+&cross; File system based partitioning makes dataset navigation tough
+
+<hr>
+
+&quest; Code needs more work - strange hangs
+
+# harpPoint
+
+## Rewrite of verification functions
+
+- `det_verify()` and `ens_verify()` rewritten / refactored
+
+- Faster and more memory efficient - removed significant bottlenecks
+
+- Dedicated internal functions that do all the data wrangling
+
+- ___prep___ function, ___compute___ function, ___cont___ function (det),
+___prob___ function (ens)
+
+- Score name passed as `new_det/ens_score`, `new_det_cont_score`, 
+`new_ens_prob_score`, `new_det/ens_score_opts`. 
+
+## `prep_ens/det_<score>()`
+
+- Set by `new_det/ens_score` argument
+
+- Prepares data before computing the score
+
+- Operates on data before grouping, e.g. to create new columns
+
+  - Bias for each case, sorting ensemble for CRPS
+  
+- Arguments: `df`, `fc_col`, `ob_col`, `opts`
+
+  - `opts` is a named list passed in `new_det/ens_score_opts`
+  
+## `compute_ens/det_<score>()`
+
+- Set by `new_det/ens_score` argument
+
+- Computes the score for each group
+
+- Typically a `dplyr::summarize()` operation on the data frame
+
+- Arguments: `grouped_df`, `show_pb`, `pb_env`, `opts`
+
+  - `opts` is a named list passed in `new_det/ens_score_opts`
+  
+  - The need for the function to include `show_pb` and `pb_env` will hopefully
+be removed
+
+## New contingency table score
+
+- Set by `new_det_cont_score` argument
+
+- Data already prepped with hit, miss, false alarm or correct rejection for
+each case
+
+- Function takes arguments: `ob_prob`, `fc_prob`, `hit`, `false_alarm`, `miss`, 
+`correct_rejection`, `show_pb`, `pb_env`, `opts`. 
+
+- `opts` is a named list passed in `new_det_score_opts`
+
+- Called by `dplyr::summarize()` internally
+
+## New ensemble probability score
+
+- Set by `new_ens_prob_score` argument
+
+- Data already prepped with ensemble probability and binary observed probability
+
+- Function takes arguments `ob_prob`, `fc_prob`, `show_pb`, `pb_env`, `opts`
+
+- `opts` is a named list passed in `new_det_score_opts`
+
+- Called by `dplyr::summarize()` internally
+
+## Things to look out for
+
+- In ___det_cont___ and ___ens_prob___ functions, obs is the first argument for 
+consistency with the {_verification_} package - order of obs and fcst args 
+might be reversed before release
+
+- Compute functions must include arguments and functionality to update a 
+progress bar
+
+```{r, echo=TRUE, eval=FALSE}
+compute_det_myscore <- function(grouped_df, show_pb, pb_env, opts) {
+  fun <- function(x, y, opts, show_pb, pb_env) {
+    res <- (x / y) * opts$myopt
+    tick_progress(show_pb, pb_env)
+    res
+  }
+  dplyr::summarize(
+    grouped_df, 
+    myscore = fun(.data$fcst, .data$obs, opts, show_pb, pb_env)
+  )
+}
+```
+
+
+## Verification for quantiles
+
+- Simply express thresholds as "q<quantile>"
+
+  - e.g. `ens_verify(..., thresholds = c("q0", "q0.25", "q0.5", "q0.75", "q1"))`
+  
+- Thresholds will be calculated from the observations for the group
+
+## New ensemble score: tw_crps
+
+- Threshold weighted CRPS
+
+- Computes CRPS emphasizing cases the fall within the threshold 
+
+- "Clamps" data outside the threshold of interest
+
+## Threshold weighted CRPS
+
+```{r, fig.width=12, fig.align='center'}
+dd <- data.frame(
+  fc = sort(rnorm(2.5e4)),
+  ob = 0,
+  y = seq_len(2.5e4),
+  th = 0.25,
+  type = "crps",
+  th_min = -0.5, 
+  th_max = 0.5
+)
+
+dd$fc_btw <- dd$fc
+
+dd <- rbind(
+  dd, 
+  dplyr::mutate(
+    dd, 
+    fc = dplyr::case_when(fc >= th ~ fc, .default = th),
+    fc_btw = dplyr::case_when(
+      fc_btw >= th_max ~ th_max, fc_btw <= th_min ~ th_min, .default = fc_btw
+    ),
+    type = "tw_crps"
+  )
+)
+
+ggplot(dd, aes(y = y)) + 
+  geom_ribbon(aes(xmin = ob, xmax = fc), fill = "#FFBB55", alpha = 0.8) +
+  geom_line(aes(x = fc), colour = "#FF6600", linewidth = 3) + 
+  geom_line(aes(x = ob), linewidth = 2, colour = "white") + 
+  geom_line(aes(x = th), linewidth = 1.5, linetype = 2, colour = "white") + 
+  facet_wrap(~toupper(type), ncol = 2) + 
+  coord_cartesian(xlim = c(-2.5, 2.5)) + 
+  harpVis::theme_harp_map() + 
+  theme(
+    plot.background = element_rect(fill = "#222222", colour = "transparent"), 
+    panel.background = element_rect(fill = "#222222"),
+    strip.background = element_rect(fill = "#1A1A1A"),
+    strip.text = element_text(colour = "#CCCCCC")
+  )
+
+```
+
+## Threshold weighted CRPS
+
+```{r, fig.width=12, fig.align='center'}
+ggplot(dd, aes(y = y)) + 
+  geom_ribbon(aes(xmin = ob, xmax = fc_btw), fill = "#FFBB55") +
+  geom_line(aes(x = fc_btw), colour = "#FF6600", linewidth = 3) + 
+  geom_line(aes(x = ob), linewidth = 2, colour = "white") + 
+  geom_line(aes(x = th_max), linewidth = 1.5, linetype = 2, colour = "white") + 
+  geom_line(aes(x = th_min), linewidth = 1.5, linetype = 2, colour = "white") + 
+  facet_wrap(~toupper(type), ncol = 2) + 
+  coord_cartesian(xlim = c(-2.5, 2.5)) + 
+  harpVis::theme_harp_map() + 
+  theme(
+    plot.background = element_rect(fill = "#222222", colour = "transparent"), 
+    panel.background = element_rect(fill = "#222222"),
+    strip.background = element_rect(fill = "#1A1A1A"),
+    strip.text = element_text(colour = "#CCCCCC")
+  )
+
+
+```
+
+# harpVis
+
+## Some new funcitonalities
+
+- Better plotting for spatial scores [James]
+
+- Mean forecast and mean observation values now available in plots
+
+# harp
+
+## Functionalities for batch running
+
+- Still some testing to do 
+
+- Documentation needs writing
+
+- Won't be worked on until after Easter
+
