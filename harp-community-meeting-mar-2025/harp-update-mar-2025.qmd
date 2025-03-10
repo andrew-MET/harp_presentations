@@ -280,7 +280,7 @@ dd <- rbind(
 )
 
 ggplot(dd, aes(y = y)) + 
-  geom_ribbon(aes(xmin = ob, xmax = fc), fill = "#FFBB55", alpha = 0.8) +
+  geom_ribbon(aes(xmin = ob, xmax = fc), fill = "#FFBB55") +
   geom_line(aes(x = fc), colour = "#FF6600", linewidth = 3) + 
   geom_line(aes(x = ob), linewidth = 2, colour = "white") + 
   geom_line(aes(x = th), linewidth = 1.5, linetype = 2, colour = "white") + 
