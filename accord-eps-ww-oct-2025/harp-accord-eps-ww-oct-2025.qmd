@@ -129,7 +129,7 @@ ggplot(dd, aes(y = y)) +
 
 ## UUI spread skill
 
-$$\mathbb{E}[STDE_{p}] = 2\mathbb{E}[VARE_{P}]$$
+$$\mathbb{E}[STDE_{P}] = 2\mathbb{E}[VARE_{P}]$$
 
 ## UUI spread skill
 
