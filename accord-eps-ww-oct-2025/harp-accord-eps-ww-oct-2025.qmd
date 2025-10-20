@@ -1,0 +1,196 @@
+---
+title: "harp version 0.3"
+author: "Andrew Singleton"
+format: 
+  revealjs:
+    theme: [default, custom.scss]
+    embed-resources: true
+    code-line-numbers: false
+---
+
+# General improvements
+
+-   Major overhaul (refactor / rewrite) of verification functions
+-   Verification for quantile thresholds
+-   More memory efficient, possibly faster
+-   More feedback on what's happening
+-   Can compute new scores without having to edit internal code
+-   New "do (nearly) everything" functionalities
+
+# Running a verification job
+
+## In an R session
+
+-   `run_point_verif()`
+
+```{r eval=FALSE, echo=TRUE}
+run_point_verif(
+  dttm       = seq_dttm(20251010, 20251020, "3h"),
+  fcst_model = c("MEPS", "IFSENS"),
+  param_defs = make_verif_param("S10m", verif_thresholds = seq(2.5, 10, 2.5)
+  fcst_path  = "/data/harp/FCTABLE",
+  obs_path   = "/data/harp/OBSTABLE",
+  out_path   = "/data/harp/verification"
+)
+```
+
+## Helper functions
+
+-   `make_verif_param()`
+    -   param name
+    -   param names in files
+    -   scaling: `make_scaling()`
+    -   gross error check bounds
+-   `make_verif_defaults()`
+    -   groupings: `make_verif_groups()`
+    -   error check against obs sd
+
+## Batch running
+
+-   `new_point_verif_project()`
+-   DEMO!
+
+# New ensemble scores
+
+## Threshold weighted CRPS
+
+-   Computes CRPS emphasizing cases the fall within the threshold
+
+-   "Clamps" data outside the threshold of interest
+
+## Threshold weighted CRPS
+
+```{r, fig.width=12, fig.align='center'}
+library(dplyr)
+library(ggplot2)
+
+dd <- data.frame(
+  fc = sort(rnorm(2.5e4)),
+  ob = 0,
+  y = seq_len(2.5e4),
+  th = 0.25,
+  type = "crps",
+  th_min = -0.5, 
+  th_max = 0.5
+)
+
+dd$fc_btw <- dd$fc
+
+dd <- rbind(
+  dd, 
+  dplyr::mutate(
+    dd, 
+    fc = dplyr::case_when(fc >= th ~ fc, .default = th),
+    fc_btw = dplyr::case_when(
+      fc_btw >= th_max ~ th_max, fc_btw <= th_min ~ th_min, .default = fc_btw
+    ),
+    type = "tw_crps"
+  )
+)
+
+ggplot(dd, aes(y = y)) + 
+  geom_ribbon(aes(xmin = ob, xmax = fc), fill = "#FFBB55") +
+  geom_line(aes(x = fc), colour = "#FF6600", linewidth = 3) + 
+  geom_line(aes(x = ob), linewidth = 2, colour = "white") + 
+  geom_line(aes(x = th), linewidth = 1.5, linetype = 2, colour = "white") + 
+  facet_wrap(~toupper(type), ncol = 2) + 
+  coord_cartesian(xlim = c(-2.5, 2.5)) + 
+  harpVis::theme_harp_map() + 
+  theme(
+    plot.background = element_rect(fill = "#333333", colour = "transparent"), 
+    panel.background = element_rect(fill = "#333333"),
+    strip.background = element_rect(fill = "#333333"),
+    strip.text = element_text(colour = "#FF6600", size = 18)
+  )
+
+```
+
+## Threshold weighted CRPS
+
+```{r, fig.width=12, fig.align='center'}
+ggplot(dd, aes(y = y)) + 
+  geom_ribbon(aes(xmin = ob, xmax = fc_btw), fill = "#FFBB55") +
+  geom_line(aes(x = fc_btw), colour = "#FF6600", linewidth = 3) + 
+  geom_line(aes(x = ob), linewidth = 2, colour = "white") + 
+  geom_line(aes(x = th_max), linewidth = 1.5, linetype = 2, colour = "white") + 
+  geom_line(aes(x = th_min), linewidth = 1.5, linetype = 2, colour = "white") + 
+  facet_wrap(~toupper(type), ncol = 2) + 
+  coord_cartesian(xlim = c(-2.5, 2.5)) + 
+  harpVis::theme_harp_map() + 
+  theme(
+    plot.background = element_rect(fill = "#333333", colour = "transparent"), 
+    panel.background = element_rect(fill = "#333333"),
+    strip.background = element_rect(fill = "#333333"),
+    strip.text = element_text(colour = "#FF6600", size = 18)
+  )
+
+
+```
+
+## UUI spread skill
+
+$$\mathbb{E}[STDE_{p}] = 2\mathbb{E}[VARE_{P}]$$
+
+## UUI spread skill
+
+$$\mathbb{E}[STDE_{P}] = 2\mathbb{E}[VARE_{P}]$$
+
+-   Based on the notion that the unbiased measure of spread is the expected difference between any two ensemble members $$
+    \small
+    \begin{aligned}
+    \mathbb{E}[(Y_{1}-Y_{2})^{2}]
+    &=\mathbb{E}[Y_{1}-\mu+\mu-Y_{2}^{2}]\\
+    &=\mathbb{E}[(Y_{1}-\mu)^{2}]-2\mathbb{E}[Y_{1}-\mu]\mathbb{E}[Y_{2}-\mu]+\mathbb{E}[(Y_{2}-\mu)^{2}]\\
+    &=2\mathbb{E}[(Y-\mu)^{2}]-0\\
+    &=2Var(Y)
+    \end{aligned}
+    $$ The 3rd equality comes from the fact $Y_{1}$ and $Y_{2}$ have the same distribution as $Y$
+
+# Plotting fields
+
+## New plot method
+
+-   `plot(data, col = )`
+-   Uses *ggplot* so easily modifiable
+-   Demo!
+
+## Wind vectors
+
+-   `geom_geowindvec(aes(u = , v = ), skip = )`
+-   Skipping is important!
+-   Demo!
+
+## Neighbourhood probabilities
+
+-   `ens_prob()` for pixel probabilities
+-   `nbhd_smooth()` for neighbourhood probabilities
+-   Needs to be done member by member and aggregated
+-   Will (hopefully) be built into `ens_prob()` in the future
+-   Need to add `ens_pfss()` function
+-   Demo!
+
+# Cross Sections
+
+## Cross sections
+
+-   Use `transformation = "xsection"` + `xsection_opts()`
+-   `geom_xs()` : model levels
+-   `geom_xs_pressure()` : model levels -\> vertical pressure
+    -   needs:
+        -   surface pressure
+
+## Cross sections
+
+-   `geom_xs_height()` : model levels -\> height ASL
+    -   needs:
+        -   surface pressure
+        -   temperature on model levels
+        -   specific humidity on model levels
+        -   representation of topographic height (usually surface geopotential)
+-   Demo!
+
+# Future plans
+
+## 
+
+-   Just maintenance 😞
