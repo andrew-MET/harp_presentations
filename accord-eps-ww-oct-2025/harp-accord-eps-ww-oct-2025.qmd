@@ -27,7 +27,7 @@ format:
 run_point_verif(
   dttm       = seq_dttm(20251010, 20251020, "3h"),
   fcst_model = c("MEPS", "IFSENS"),
-  param_defs = make_verif_param("S10m", verif_thresholds = seq(2.5, 10, 2.5)
+  param_defs = make_verif_param("S10m", verif_thresholds = seq(2.5, 10, 2.5)),
   fcst_path  = "/data/harp/FCTABLE",
   obs_path   = "/data/harp/OBSTABLE",
   out_path   = "/data/harp/verification"
