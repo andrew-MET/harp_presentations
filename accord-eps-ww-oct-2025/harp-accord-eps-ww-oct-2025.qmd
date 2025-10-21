@@ -129,11 +129,11 @@ ggplot(dd, aes(y = y)) +
 
 ## UUI spread skill
 
-$$\mathbb{E}[STDE_{P}] = 2\mathbb{E}[VARE_{P}]$$
+$$\mathbb{E}[{STDE_{P}}^{2}] = 2\mathbb{E}[VARE_{P}]$$
 
 ## UUI spread skill
 
-$$\mathbb{E}[STDE_{P}] = 2\mathbb{E}[VARE_{P}]$$
+$$\mathbb{E}[{STDE_{P}}^{2}] = 2\mathbb{E}[VARE_{P}]$$
 
 -   Based on the notion that the unbiased measure of spread is the expected difference between any two ensemble members $$
     \small
