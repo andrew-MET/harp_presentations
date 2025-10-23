@@ -1,0 +1,950 @@
+---
+title: "ACCORD EPS Working Week harp demos"
+format: 
+  html:
+    embed-resources: true
+    code-line-numbers: false
+    toc: true
+    toc-depth: 2
+
+---
+
+# Introduction
+
+These examples need harp version 0.3. You can install it from R using
+
+```{r eval=FALSE}
+install.packages("remotes")
+remotes:install_github("harphub/harp")
+```
+
+
+To work through these examples yourself, you can access the data at 
+/ec/res4/scratch/fa1m/harp-demo on atos. 
+
+To read netcdf files, you will need to also have the R package __ncd4__ installed. 
+To install on atos, you need to have a netcdf module loaded. So you should do 
+something like this:
+
+```{r eval=FALSE}
+module load netcdf4/4.9.3
+R
+install.packages("ncdf4")
+```
+
+For these examples we're going to need the _harp_ and _dplyr_ packages. 
+
+```{r attach-packages, message=FALSE}
+library(harp)
+library(dplyr)
+```
+
+# Batch running
+
+A new feature in harp v0.3 is the ability to run point verification as batch 
+jobs. This involvess setting up a project, editing a couple of configuration 
+files and running a script with arguments. 
+
+The first step is to set up a new project
+
+```{r setup-project, eval=FALSE}
+new_point_verif_project("~/harp/demo")
+```
+
+This will create the _~/harp/demo_ directory on your system and place all 
+of the files you need there:
+
+- `harp_point_verif_conf.txt`
+- `harp_point_verif_params.R`
+- `harp_point_verify.R`
+
+If you answered "Yes" to opening the files for editing the first 2 files 
+will be opened in your default editor. 
+
+## `harp_point_verif_conf.txt`
+
+In this file, you can set some general configurations - the contents of the 
+file is shown below
+
+```{bash point-verif-conf, eval=FALSE}
+# Setup file
+# All files should be precede by file:
+# For numeric sequences use .. The step is the difference between the
+# two preceding values. e.g. 0, 3..48 will give you 0-48 with a step of 3.
+
+param_defs           = file: harp_point_verif_params.R # Should generally be a file - you shoud use make_verif_param()
+defaults             = param_defs # Set to param_defs if included in the param_defs file, otherwise a file
+
+lead_time            = 0, 3..66
+lead_time_unit       = h
+
+stations             = file: stations.csv # can be a vector or a csv file with a SID column
+station_groups       = file: station_groups.csv # Should be a csv file with SID and station_group columns
+
+dttm_rounding        = NULL
+dttm_rounding_dirn   = nearest
+dttm_rounding_offset = 0
+
+members              = NULL
+lags                 = NULL
+ens_mean_as_det      = FALSE
+
+fcst_path            = /path/to/fctable
+fcst_template        = fctable
+fcst_format          = fctable
+
+obs_path             = /path/to/obstable
+obs_template         = obstable
+obs_format           = obstable
+
+out_path             = /path/to/verification
+out_template         = point_verif
+out_format           = rds
+
+params = {
+  10m Wind Speed
+  10m Wind Direction
+  2m Temperature
+  2m Dewpoint
+  2m Relative Humidity
+  2m Specific Humidity
+  Total Cloud Cover
+  Mean Sea Level Pressure
+  6h Precipitation
+  12h Precipitation
+  24h Precipitation
+  Upper Air Temperature
+  Upper Air Dewpoint
+  Upper Air Wind Speed
+  Upper Air Wind Direction
+  Upper Air Geopotential Height
+  Upper Air Relative Humidity
+  Upper Air Specific Humidity
+}
+
+```
+
+Each of these options is exaplained below
+
+### param_defs
+
+This is a file containing definitions for parameters that could be used in the
+verification. This is the other file you might want to edit. See 
+[harp_point_verif.params.R]{#harp_point_verif_params.R} for more information 
+about its contents. 
+
+### defaults
+
+The default settings to apply to each parameter, in terms of groupings and 
+observation error check against forecasts. This is normally included in the 
+param_defs file, so is set to `param_defs` to tell the configuration to look 
+in that file. 
+
+### lead_time and lead_time_unit
+
+The lead time can be a comma separated list of numbers, or sequence expressed
+as `from, step..to`. The lead time unit can be "d", "h", "m", or "s" for days, 
+hours minutes and seconds. 
+
+### stations and station_groups
+
+`stations` sets the stations to be used in the verifcation. It can be a comma 
+separated list of station IDs, or a .csv file with a `SID` column. 
+`station_groups` should be a .csv file with a `station_group` column. If 
+`"station_group"` is included in the groupings in `param_defs` and nothting 
+is included in the config file, harp's built in table of station groups is used.
+
+### members, lags and ens_mean_as_det
+
+For ensemble forecasts, the members to use (if not all of them) should be 
+expressed here as well as the lags for lagged ensembles. If you want to use an
+ensemble forecast and do deterministic verification on the ensemble mean, set 
+`ens_mean_as_det = TRUE`. 
+
+### fcst_path, fcst_template, fcst_format
+
+Path to the point forecast files. All experiments to be verified should be 
+under this directory. For SQLite FCTABLE files, set both `fcst_template` and 
+`fcst_format` to `fctable`. For a parquet dataset, `fcst_template` and 
+`fcst_format` should be `fcparquet`.
+
+### obs_path, obs_template, obs_format
+
+Path to the point observation files. For SQLite OBSTABLE files, set both 
+`obs_template` and 
+`obs_format` to `obstable`. For a parquet dataset, `obs_template` and 
+`obs_format` should be `obsparquet`.
+
+### out_path, out_template, out_format
+
+Path to which to write the output. This should either be relative to the 
+directory you are running in, or the full path. 
+
+### params
+
+Of the parameters named in `param_defs`, the parameter names to include in 
+the verificaion. 
+
+## `harp_point_verif_params.R`
+
+This file is used to set specific information about the parameters that could 
+be included in the verification, and the defaults to be applied to all 
+parameters. An extract of the file is shown below:
+
+```{r point-verif-params, eval=FALSE}
+params <- c(
+  make_verif_param(
+    "10m Wind Speed",
+    fcst_param          = "S10m",
+    obs_param           = "S10m",
+    obs_min             = 0,
+    obs_max             = 100,
+    obs_error_sd        = 6,
+    verif_thresholds    = list(
+      c(1.5, 3.3, 5.5, 8, 10.8, 13.9, 24.5), 
+      c(0, 1.5, 3.3, 5.5, 8, 10.8, 13.9, 24.5, Inf)
+    ),
+    verif_comparator    = c("ge", "between"),
+    verif_comp_inc_low  = TRUE,
+    verif_comp_inc_high = FALSE
+  ),
+   make_verif_param(
+    "2m Temperature",
+    fcst_param          = "T2m",
+    fcst_scaling        = make_scaling(-273.15, "degC"),
+    obs_param           = "T2m",
+    obs_scaling         = make_scaling(-273.15, "degC"),
+    obs_min             = 223,
+    obs_max             = 333,
+    obs_error_sd        = 6,
+    verif_thresholds    = list(c(-30, seq(-20, 30, 5)), c(-Inf, -30, seq(-20, 30, 5), Inf)),
+    verif_comparator    = c("ge", "between"),
+    verif_comp_inc_low  = TRUE,
+    verif_comp_inc_high = FALSE
+  ),
+  make_verif_param(
+    "Upper Air Temperature",
+    fcst_param          = "T",
+    fcst_scaling        = make_scaling(-273.15, "degC"),
+    obs_param           = "T",
+    obs_scaling         = make_scaling(-273.15, "degC"),
+    obs_min             = 173,
+    obs_max             = 333,
+    vertical_coordinate = "pressure",
+    verif_groups        = make_verif_groups(
+      c("lead_time", "valid_hour", "valid_dttm"), 
+      "fcst_cycle", 
+      "p"
+    )
+  )
+)
+
+defaults <- make_verif_defaults(
+  make_verif_groups(
+    c("lead_time", "valid_dttm", "valid_hour"),
+    c("fcst_cycle", "station_group")
+  )
+)
+
+```
+
+This file contains R code, but it should be relatively simple. It uses the 
+`make_verif_param()` function to make the definitions for each parameter and 
+the `make_verif_defaults()` function to define the defaults. 
+
+Taking `"2m Temperature"` as an example, the options for `make_verif_param()` 
+are:
+
+- The name of the parameter. This is what will appear in the output file names 
+and the shiny app.
+- `fcst_param` The name of the parameter in the forecast files
+- `fcst_scaling` Any scaling to apply to the forecast data before verifcation. 
+Here the `make_scaling()` function is used to make the settings, and it offsets
+by -273.15 and sets the units to "degC" - i.e. a conversion from _Kelvin_ to 
+$^{\circ}C$. 
+- `obs_param` As `fcst_param` except for observations
+- `obs_scaling` As `fcst_scaling` except for observations
+- `obs_min` `obs_max` The minimum and maximum bounds of the observaions to 
+use in the gross error check
+- `obs_error_sd` The maximum number of standard deviations the observation can 
+be from the forecast before it is rejected. Can also be set in defaults. 
+- `verif_thresholds` `verif_comparator` For threshold based scores, 
+`verif_comparator` sets what comparison with a threshold to do, and 
+`verif_thersholds` sets the thresholds. If more than one `verif_comparator` is 
+given the `verif_thresholds` must be a list of thresholds, with one set of
+thresholds for each comparator. 
+- `verif_comp_inc_low` `verif_comp_inc_high` For the between and outside 
+comparators, these set whether to include the threshold or not at each end of 
+the range. 
+
+For the defaults, only `groupings` and `obs_error_sd` can be set. For `groupings`
+the helper function `make_verif_groups()` can be used to help define complex
+grouping combinations. If `groupings` and / or `obs_error_sd` are set for an 
+individual parameter, the defaults are overridden.
+
+## harp_point_verify.R
+
+Instructions for running the verification are given in the _README_ file, which
+is reproduced below:
+
+```{bash, eval=FALSE}
+How to run a point verification
+===============================
+
+1. Prequisites
+--------------
+
+- You need a harp version >= 0.3
+- RScript should be available
+- Point data have already been prepared in SQLite or Parquet files
+  - harpIO functions read_forecast() and read_obs() will do this job
+
+2. Getting Started
+------------------
+
+- Start an R session
+  If you haven't already installed harp do the following:
+
+  > install.packages("remotes")
+  > remotes::install_github("harphub/harp")
+
+  This will likely take some time! It is recommended that you have a Github
+  Personal Access Token (PAT) - see more information here:
+
+- Once harp is installed you can attach the package
+
+  > library(harp)
+
+- Now initiate a new point verification project
+
+  > new_point_point_verif_project("<dir>")
+
+    - <dir> is the directory where you want to install the project. If you are
+      using renv, this should be the same directory where your harp renv project
+      is installed. Otherwise it is recommended to start with a new directory.
+
+    - new_point_verif_project() will place the following files in <dir>
+      - README (You're reading this now!)
+      - harp_point_verif_params.R : Defines the parameters to be verified
+      - harp_point_verif_conf.txt : Configuration of your verification
+      - harp_point_verify.R : The script that runs the verfication
+
+    - You will be asked if you want to open the files for editing. If you answer
+      yes, harp_point_verif_params.R and harp_verif_config.txt will be opened
+      in your default editor.
+
+3. Preparing a verification
+---------------------------
+
+To prepare a verification, you probably need to edit harp_point_verif_params.R
+and harp_point_verif_config.txt.
+
+  - harp_point_verif_params.R
+
+    - This file is an R Script that makes use of the function make_verif_param()
+      to provide definitions for each parameter in the verification, such as
+
+      - The name of the parameter
+      - The name of the parameter in forecast and observation files
+      - Scaling, using the function make_scaling(), to be applied to forecasts
+        and observations of the parameter
+      - Bounds for error checks
+      - The vertical co-ordinate of upper air parameters
+      - Thersholds and comparators for threshold / categorical scores
+      - Special verification groupings, using make_verif_groups(), that are
+        not the default
+      - Whether to use circular statistics (e.g. for wind direction)
+
+    - Additionally default groupings, to apply to all parameters are defined
+      using make_verif_defaults
+
+  - harp_point_verif_conf.txt
+
+    - This file is a text file that sets local configurations, such as paths,
+      lead times to verify, extra files (e.g. station lists). These are all
+      arguments that are eventually sent to run_point_verif(), so you can see
+      the documentation for that function for more information.
+
+4. Running a verification
+-------------------------
+
+The verifcation is run by the script harp_point_verify.R. You should not make
+any changes to the code in this script. It is designed to be run by Rscript,
+from a shell - this means that you shouldn't be in an R session!
+
+  Usage:
+
+    Rscript harp_point_verify.R <fcst_model> [options]
+
+    fcst_model: A comma separated string of the names of the forecast models to
+                include in the verification
+
+  Options:
+
+    -h             : Show the help
+    -v             : Show the version of harp_point_verify.R
+    -s START_DTTM  : The start date-time string in YYYYMMDD[hh][mm][ss]
+    -e END_DTTM    : The end date-time string in YYYYMMDD[hh][mm][ss]
+    -b BY          : The time between forecasts. Should be a number followed by
+                     either s, m, h or d for seconds, minutes, hours and days
+                     respectively. It is set to 1d if missing.
+    -l LEAD_TIME   : The lead times to verify. Should be a comma separted
+                     sequence of 3 numbers: start,end,by. Overrides what is set
+                     in the configuration file.
+    -c CONFIG_FILE : The path to the configuration file.
+    -o OUT_SUBDIR  : The subdirectory for the output, under what is set in the
+                     configuration file
+    -m MAIN_MODEL  : The model to be considered as the main forecast mdoel.
+
+The verifcation should run, updating you with information about what is
+happening. Note that progress bars are switched off since this way of running
+point verification is most suited to batch jobs that output to a log file.
+
+```
+
+
+# New Plotting functionalities
+
+## `plot()`
+
+__NOTE: To run these demos on atos, the easiest thing to do will be to set up 
+a symlink in your home directory__
+
+```{bash symlink, eval=FALSE}
+cd $HOME
+ln -sf /ec/res4/scratch/fa1m/harp-demo data
+```
+
+Otherwise you can copy or symlink the data to another directoy and update the 
+`file_path` argument in all of your read functions to the appropriate location. 
+
+`plot()` is R's generic function for plotting. A method has been made for 
+`harp_grid_df` data frames - these are what you get from `read_forecast()` and 
+`read_grid(..., data_frame = TRUE)`. You can see the help for the `harp_grid_df` 
+method of `plot()` using `?plot.harp_grid_df`. 
+
+The method uses `ggplot()` under the hood so that plots are fully customisable 
+using _ggplot2_ functions.
+
+Some of the capabilities of the plot method are shown in the following, in 
+addition to some tips for plotting ensembles. First we are going to read in 
+some ensemble data. For running on atos, you can set 
+`file_path = "/ec/res4/scratch/fa1m/harp-demo/meps/ens"`
+
+```{r read-wind-speed-ens, message=FALSE, warning=FALSE}
+wspd <- read_forecast(
+  2025072400,
+  "meps",
+  "ws10m",
+  lead_time     = seq(0, 24, 3),
+  members       = c(0, 1, 2, 9, 12),
+  file_path     = "~/data/meps/ens",
+  file_template = "member_{MBR2}/{fcst_model}_sfc_{LDT2}_{YYYY}{MM}{DD}T{HH}Z.nc",
+  file_format_opts = netcdf_opts("met_norway_det"),
+  return_data   = TRUE
+)
+
+```
+
+For `plot()` the first argument is the data frame and the second argument is 
+the column we want to plot. By default the plot will be faceted on the 
+`valid_dttm` column - this means one panel for each valid date time of the 
+forecast
+
+```{r simple-wind-speed-plot, message=FALSE}
+plot(wspd, meps_mbr000)
+```
+
+Given the lack of contrast between the map and the data, you might want to 
+change the colour of the map outline:
+
+```{r simple-wind-speed-plot-grey-country, message=FALSE}
+plot(wspd, meps_mbr000, country_outline = "grey45")
+```
+
+
+When you read in an ensemble, each member gets its own column in the data frame, 
+but `plot()` will only plot one column of your data. If, for example, we wanted 
+to plot each ensemble member for a given lead time, we need to collect all of 
+the members into a single column. We can do this with the `pivot_members()` 
+function, and then use `filter()` to select a single lead time. We then tell the 
+`plot()` function that we want to facet by ensemble member by setting
+`facet_col = member`
+
+```{r wind-speed-for-members, message=FALSE}
+plot(
+  filter(pivot_members(wspd), lead_time == 24),
+  facet_col = member,
+  country_outline = "grey45"
+)
+```
+
+You can also use the `ens_stats()` function to get the ensemble standard 
+deviation, the ensemble mean, the ensemble variance, and the ensemble minimum 
+and maximum. By default the ensemble mean and ensemble standard deviation are 
+returned, but you can get the others by setting arguments `var`, `min` and/or 
+`max`to `TRUE`. The returned columns are `ens_mean`, `ens_sd`, `ens_var`, 
+`ens_min` and `ens_max`. You can also use `filter()` from the _dplyr_ package
+to filter the data to specific rows. 
+
+```{r ens-mean, message=FALSE}
+plot(
+  filter(ens_stats(wspd), lead_time == 12), 
+  ens_mean,
+  country_outline = "grey45"
+)
+```
+
+Since these plots use _ggplot_, you can customise the plot using _ggplot_ 
+functions. For example, we can change the colour scale.
+
+```{r ens-sd, message=FALSE}
+plot(
+  filter(ens_stats(wspd), lead_time == 12), 
+  ens_sd,
+  country_outline = "grey45"
+) + 
+  scale_fill_viridis_c(option = "F")
+```
+
+And we can change some of the labeling
+
+```{r ens-max, message=FALSE}
+plot(
+  filter(ens_stats(wspd, max = TRUE), lead_time == 12), 
+  ens_max,
+  country_outline = "grey55"
+) + 
+  scale_fill_viridis_c(option = "F") + 
+  labs(
+    title = "Ensemble maximum wind speed", 
+    subtitle = format(
+      filter(wspd, lead_time == 12)$valid_dttm, "%H:%M %d %b %Y"
+    ),
+    fill = bquote(m.s^{-1})
+  )
+```
+
+If you want to plot the ensemble perturbations, you can use the `across()` 
+function from the _dplyr_ package to apply a function to multiple columns.
+
+```{r compute_perts}
+perts <- select(
+  mutate(wspd, across(contains("meps_mbr"), ~.x - meps_mbr000)),
+  -meps_mbr000
+)
+```
+
+And then we can plot - here we use the `gradient2` fill scale in combination
+with `abs_range` for the limits to get the fill colours nicely centred on 
+zero.
+
+```{r pert-plot, message=FALSE}
+plot(
+  filter(pivot_members(perts), lead_time == 0),
+  facet_col = member
+) +
+  scale_fill_gradient2(limits = abs_range) +
+  labs(fill = bquote(atop(perturbation,m.s^{-1})))
+```
+
+## Wind vectors
+
+You can plot wind vectors using the new _ggplot geom_ `geom_geowindvec()`. This
+requires you to have the _U_ and the _V_ components of wind. When you read in 
+more than one parameter, parameters are stored in rowwise, so we can use 
+`pivot_parameters_wider()` to get each one in its own column - we can use R's pipe 
+operator, `|>` to send the reault of one function to the first argument of the 
+next function. 
+
+```{r read-wind-vectors, message=FALSE, warning=FALSE}
+wind <- read_forecast(
+  2025072400,
+  "meps",
+  c("u10m", "v10m"),
+  lead_time     = 12,
+  file_path     = "~/data/meps/ens",
+  file_template = "member_00/{fcst_model}_sfc_{LDT2}_{YYYY}{MM}{DD}T{HH}Z.nc",
+  file_format_opts = netcdf_opts("met_norway_det"),
+  return_data   = TRUE
+) |>
+  pivot_parameters_wider(fcst) |>
+  mutate(wind_speed = sqrt(u10m ^ 2 + v10m ^ 2))
+
+```
+
+`geom_geowindvec()` has 2 important arguments - `skip` and `max_vec`. By default, 
+a vector will be rendered for each grid square, but with high resolution models 
+it will be impossible to see each individual vector. Therefore `skip` is used to 
+tell the function how many grid squares to skip between each rendered vector.
+
+```{r plot-wind-vec, message=FALSE}
+plot(wind, col = wind_speed) +
+  scale_fill_distiller(palette = "PuRd", direction = 1) +
+  geom_geowindvec(
+    aes(u = u10m, v = v10m),
+    wind,
+    skip = 25
+  )
+```
+
+By default, the maximum wind speed in the data will be used to set the maximum
+size a vector equal to `skip`. You can use `max_vec` to set the wind speed that 
+is equal to a vector of length `skip`. If we set this lower than the maximum wind
+speed, then we will longer vectors. 
+
+```{r plot-wind-vec-max-vec, message=FALSE}
+plot(wind, col = wind_speed) +
+  scale_fill_distiller(palette = "PuRd", direction = 1) +
+  geom_geowindvec(
+    aes(u = u10m, v = v10m),
+    wind,
+    skip = 25,
+    max_vec = 5
+  ) +
+  theme(panel.border = element_rect(colour = NA))
+
+```
+
+## Cross sections
+
+It has been possible to extract cross sections from fields at read time in harp 
+fr many years. However, the functionality to easily plot cross sections on model 
+hybrid levels using pressure or height coordinates has not been available until 
+now. To read in cross sections, we need a start and end point for the section 
+in (lon, lat) coordinates.
+
+```{r xs-locations}
+oslo    <- c(10.75, 59.91)
+ålesund <- c(6.15, 62.47)
+```
+
+We can also use the new(ish) parameter definition system to map variable names
+to variable names in the file. 
+
+```{r set-param-names}
+my_params <- add_param_def(
+  "clw",
+  netcdf = new_netcdf_param("mass_fraction_of_cloud_condensed_water_in_air_ml")
+)
+
+my_params <- add_param_def(
+  "cli",
+  netcdf = new_netcdf_param("mass_fraction_of_cloud_ice_in_air_ml"),
+  param_defs = my_params
+)
+```
+
+In order to convert model levels to pressure levels you need the surface 
+pressure, and to convert to height levels you also need the temperature and 
+specific humidity on model levels as well as the surface geopotential.
+
+```{r erad-xs, message=FALSE, warning=FALSE}
+os_ål <- read_forecast(
+  2025072400,
+  "meps",
+  c("T", "Q", "psfc", "sfc_geo", "caf", "clw", "cli", "w"),
+  lead_time           = 12,
+  file_path           = "~/data/meps/det",
+  file_template       = "{fcst_model}_det_2_5km_{YYYY}{MM}{DD}T{HH}Z.nc",
+  transformation      = "xsection",
+  transformation_opts = xsection_opts(oslo, ålesund),
+  param_defs          = my_params,
+  vertical_coordinate = "model",
+  return_data         = TRUE
+) |>
+  pivot_parameters_wider(fcst)
+
+```
+
+There is currently no `plot()` method for cross sections, so we have to use 
+`ggplot()` directly. `geom_xs` is used to plot the cross section on model 
+levels.
+
+```{r basic-xs-model-levels}
+ggplot(os_ål, aes(xs = caf)) +
+  geom_xs()
+```
+
+Model levels are typically numbered from the top to the bottom of the atmosphere, 
+so to get them the correct way up we reverse the y-axis with `scale_y_reverse()`. 
+We can also remove the expansion zone around the data with `coord_cartesian(expand = FALSE)`. 
+
+```{r basic-xs-model-levels-rev}
+ggplot(os_ål, aes(xs = caf)) +
+  geom_xs(interpolate = TRUE) +
+  scale_fill_viridis_c(option = "F") +
+  scale_y_reverse() +
+  coord_cartesian(expand = FALSE) 
+```
+
+Plotting with the vertical cooordinate in pressure is exactly the same, except 
+we use `geom_xs_pressure()` and we have to tell `ggplot()` which column in the data the 
+surface pressure is in. 
+
+```{r pressure-xs, message=FALSE}
+ggplot(os_ål, aes(xs = caf, psfc = psfc)) +
+  geom_xs_pressure(interpolate = TRUE) +
+  scale_fill_viridis_c(option = "F") +
+  scale_y_reverse() +
+  coord_cartesian(expand = FALSE)
+```
+
+`geom_xs_pressure()` has a number of options that can make your plot easier to 
+read / view. You can find these described in the help - i.e. `?geom_xs_pressure`
+
+```{r pressure-xs-fancy, message=FALSE}
+ggplot(os_ål, aes(xs = caf, psfc = psfc)) +
+  geom_xs_pressure(
+    interpolate = TRUE,
+    scale_pressure = 1 / 100,
+    scale_distance = 1 / 1000,
+    topo_colour = "grey",
+    topo_linewidth = 0.5
+  ) +
+  scale_fill_viridis_c(option = "F") +
+  scale_y_reverse() +
+  coord_cartesian(expand = FALSE) +
+  theme_bw() +
+  labs(
+    x        = "Oslo -> Ålesund [km]",
+    y        = "Pressure [hPa]",
+    fill     = "Cloud\nFraction",
+    title    = "Cloud Fraction",
+    subtitle = "for a cross section between Oslo and Ålesund"
+  )
+
+```
+
+Plotting on height coordinates is also pretty much same, except that we use 
+`geom_xs_height()` and we need to pass the columns for temperature (`temp`), 
+specific humidity (`spec_hum`) and topography (`topo`) to `aes()`. It is 
+expected that the topography is surface geopotential, but if you have the 
+actual model elevation you can set `topo_is_geo = FALSE` in the call to 
+`geom_xs_height()`.
+
+```{r height-xs, message=FALSE}
+ggplot(os_ål, aes(xs = caf, psfc = psfc, temp = T, spec_hum = Q, topo = sfc_geo)) +
+  geom_xs_height(
+    interpolate = TRUE,
+    scale_distance = 1 / 1000,
+    topo_colour = "grey",
+    topo_linewidth = 0.5
+  ) +
+  scale_fill_viridis_c(option = "F") +
+  coord_cartesian(expand = FALSE) +
+  theme_bw() +
+  labs(
+    x        = "Oslo -> Ålesund [km]",
+    y        = "Height [m]",
+    fill     = "Cloud\nFraction",
+    title    = "Cloud Fraction",
+    subtitle = "for a cross section between Oslo and Ålesund"
+  )
+```
+
+
+Typically you'd want to plot the cross sections using pressure coordinates since
+they emphasise the lower atmosphere where all the action is happening. You can 
+however set the height limits in the call the `geom_height_xs()`, using NA to use
+the limits of the data. 
+
+```{r height-xs-height-lims, message=FALSE}
+ggplot(os_ål, aes(xs = caf, psfc = psfc, temp = T, spec_hum = Q, topo = sfc_geo)) +
+  geom_xs_height(
+    interpolate = TRUE,
+    scale_distance = 1 / 1000,
+    height_lims = c(NA, 12000),
+    topo_colour = "grey",
+    topo_linewidth = 0.5
+  ) +
+  scale_fill_viridis_c(option = "F") +
+  coord_cartesian(expand = FALSE) +
+  theme_bw() +
+  labs(
+    x        = "Oslo -> Ålesund [km]",
+    y        = "Height [m]",
+    fill     = "Cloud\nFraction",
+    title    = "Cloud Fraction",
+    subtitle = "for a cross section between Oslo and Ålesund"
+  )
+
+```
+
+Finally, it is probably useful to have a map of where your cross section is. This 
+is easily done using `gemo_xs_map()` for any cross section column in your data. 
+For maps we use `coord_equal()` as we want the x and y directions to have an 
+aspect ratio of 1. 
+
+```{r xs-map}
+ggplot(os_ål, aes(xs = T)) +
+  geom_xs_map() +
+  coord_equal(expand = FALSE)
+```
+
+By default, the ends of the cross section are labelled _A_ and _B_. We can use 
+`section_labels` to change this and `section_label_hjust` and `section_label_vjust` 
+to alter the horizontal and vertical justifications of the labels. You can also 
+set the colour of land masses using the `map_fill` option of `geom_xs_map()`and 
+water colour by setting a background colour using `theme(panel.background = ...)`. 
+By adding `theme_harp_map()` we get some settings that are more approriate for  
+map plots. 
+
+```{r xs-map-fancy}
+ggplot(os_ål, aes(xs = T)) +
+  geom_xs_map(
+    section_labels = c("Oslo", "Ålesund"),
+    section_label_hjust = c(-0.2, 1.1),
+    map_fill = "grey"
+  ) +
+  coord_equal(expand = FALSE) +
+  theme_harp_map() +
+  theme(panel.background = element_rect(fill = "skyblue"))
+```
+
+And just to demonstrate a different fill colour scale in cross sections, this is 
+how you might plot vertical velocities with updrafts in blue and downdrafts in 
+red. 
+
+```{r xs-pressure-w, message=FALSE}
+ggplot(os_ål, aes(xs = w, psfc = psfc)) +
+  geom_xs_pressure(
+    interpolate = TRUE,
+    scale_pressure = 1 / 100,
+    scale_distance = 1 / 1000,
+    topo_fill = "grey",
+    topo_colour = "grey20",
+    topo_linewidth = 0.5
+  ) +
+  scale_fill_gradient2(limits = abs_range) +
+  scale_y_reverse() +
+  coord_cartesian(expand = FALSE) +
+  theme_bw() +
+  labs(
+    x        = "Oslo -> Ålesund [km]",
+    y        = "Pressure [hPa]",
+    fill     = bquote(m.s^{-1}),
+    title    = "Veritcal Velocity",
+    subtitle = "for a cross section between Oslo and Ålesund"
+  )
+```
+
+# Neighbourhood probabilities
+
+It is possible to compute neighbourhood probabilities from ensemble (or deterministic)
+forecasts - lets begin by reading in some precipitation data and decumulating it
+to 3h accumulations using the `decum()` function.
+
+```{r read-precip, message=FALSE, warning=FALSE}
+pcp3h <- read_forecast(
+  2025072400,
+  "meps",
+  "pcp",
+  lead_time     = seq(0, 24, 3),
+  members       = c(0, 1, 2, 9, 12),
+  file_path     = "~/data/meps/ens",
+  file_template = "member_{MBR2}/{fcst_model}_sfc_{LDT2}_{YYYY}{MM}{DD}T{HH}Z.nc",
+  file_format_opts = netcdf_opts("met_norway_det"),
+  return_data   = TRUE
+) |> 
+  decum(3) |> 
+  filter(lead_time > 0)
+```
+
+We can plot the precipition for member 0 on a log base 2 fill colour scale, making 
+sure to set data below the lower limit to NA and data above the upper limit to 
+the upper limit using `oob = censor_low_squish_high`, where `oob` means _out of bounds_.
+
+```{r pcp-mbr000-ts, message=FALSE}
+plot(pcp3h, col = meps_mbr000) +
+  scale_fill_viridis_c(
+    limits = c(0.125, NA),
+    trans = "log2",
+    oob = censor_low_squish_high,
+    na.value = NA,
+    option = "G",
+    direction = -1
+  )
+```
+
+We can compute grid square probabilities using `ens_prob()` and passing a 
+threshold. For example, for 3h precipitation >= 4mm, we would do 
+
+```{r}
+prob4 <- ens_prob(pcp3h, 4)
+```
+
+The new column has the naming convention `prob_<comparator>_threshold`, so in 
+this case we would get `prob_ge_4`. 
+
+```{r grid-square-prob, message=FALSE}
+plot(prob4, col = prob_ge_4) +
+  scale_fill_viridis_c(option = "H", limits = c(0.1, 1), na.value = NA) +
+  labs(
+    title = bquote("Probabiilty 3-hour precipitation \u2265 4mm"), 
+    fill = NULL
+  )
+```
+
+Computing neighbourhood probabilities is a little more involved. We first 
+need to compute neighbourhood smoothed binary probabilities for each member
+using `nbhd_smooth()` with a neighbourhood radius and a threshold, and then 
+aggregate using `ens_stats()`. The resulting neighbourhood probability is in the 
+`ens_mean` column. 
+
+```{r nbhd-prob-at, message=FALSE}
+nbhd_at <- ens_stats(
+  mutate(pcp3h, across(contains("meps_mbr"), ~nbhd_smooth(.x, 7, 4))),
+  sd = FALSE
+)
+
+plot(nbhd_at, col = ens_mean) +
+  scale_fill_viridis_c(option = "H", limits = c(0.1, 1), na.value = NA) +
+  labs(
+    title = bquote("Probabiilty 3-hour precipitation \u2265 4mm"), 
+    subtitle = "for a neighbourhood radius of 7 grid squares",
+    fill = NULL
+  )
+
+```
+
+In the above, the probability is still the probability at each grid square, but in 
+this case each grid square in the neighbourhood is treated as an ensemble member thus
+creating a super ensemble with 5 (the original ensemble size) x 15 x 15 members, where 
+the 15 is the number of grid squares for each side of the neighbourhood (radius x 2 + 1). 
+
+For warning purposes, it is often more instructive to get the probability that the
+threshold will be exceeded at any random location within the neighbourhood. We 
+can compute this by setting a binary probabilty for each grid square in the 
+neighbourhood smoothed member probabilties: 1 if neighbourhood probability > 0, and 
+0 otherwise. 
+
+```{r nbhd-prob-within, message=FALSE}
+nbhd_within <- ens_stats(
+  mutate(pcp3h, across(contains("meps_mbr"), ~nbhd_smooth(.x, 7, 4) > 0)),
+  sd = FALSE
+)
+
+plot(nbhd_within, col = ens_mean) +
+  scale_fill_viridis_c(option = "H", limits = c(0.1, 1), na.value = NA) +
+  labs(
+    title = bquote("Probabiilty 3-hour precipitation \u2265 4mm"), 
+    subtitle = "at any location within 7 grid squares in any direction",
+    fill = NULL
+  )
+
+
+```
+
+You can save any of these plots using [`ggsave()`](https://ggplot2.tidyverse.org/reference/ggsave.html). 
+
+# More reading
+
+To learn more about plotting with `ggplot()`, you can see the 
+[package documentation](https://ggplot2.tidyverse.org/), and the 
+[official book](https://ggplot2-book.org/). 
+
+If you want to learn how to make a layout with multiple plots, take a look at 
+the [patchwork](https://patchwork.data-imaginist.com/index.html) package. 
+
+
