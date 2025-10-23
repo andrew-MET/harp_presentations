@@ -451,14 +451,14 @@ the column we want to plot. By default the plot will be faceted on the
 `valid_dttm` column - this means one panel for each valid date time of the 
 forecast
 
-```{r simple-wind-speed-plot, message=FALSE}
+```{r simple-wind-speed-plot, message=FALSE, fig.width=8, fig.height=10}
 plot(wspd, meps_mbr000)
 ```
 
 Given the lack of contrast between the map and the data, you might want to 
 change the colour of the map outline:
 
-```{r simple-wind-speed-plot-grey-country, message=FALSE}
+```{r simple-wind-speed-plot-grey-country, message=FALSE, fig.width=8, fig.height=10}
 plot(wspd, meps_mbr000, country_outline = "grey45")
 ```
 
@@ -855,7 +855,7 @@ We can plot the precipition for member 0 on a log base 2 fill colour scale, maki
 sure to set data below the lower limit to NA and data above the upper limit to 
 the upper limit using `oob = censor_low_squish_high`, where `oob` means _out of bounds_.
 
-```{r pcp-mbr000-ts, message=FALSE}
+```{r pcp-mbr000-ts, message=FALSE, fig.width=8, fig.height=10, warning=FALSE}
 plot(pcp3h, col = meps_mbr000) +
   scale_fill_viridis_c(
     limits = c(0.125, NA),
@@ -877,7 +877,7 @@ prob4 <- ens_prob(pcp3h, 4)
 The new column has the naming convention `prob_<comparator>_threshold`, so in 
 this case we would get `prob_ge_4`. 
 
-```{r grid-square-prob, message=FALSE}
+```{r grid-square-prob, message=FALSE, fig.width=8, fig.height=10, warning=FALSE}
 plot(prob4, col = prob_ge_4) +
   scale_fill_viridis_c(option = "H", limits = c(0.1, 1), na.value = NA) +
   labs(
@@ -892,7 +892,7 @@ using `nbhd_smooth()` with a neighbourhood radius and a threshold, and then
 aggregate using `ens_stats()`. The resulting neighbourhood probability is in the 
 `ens_mean` column. 
 
-```{r nbhd-prob-at, message=FALSE}
+```{r nbhd-prob-at, message=FALSE, fig.width=8, fig.height=10, warning=FALSE}
 nbhd_at <- ens_stats(
   mutate(pcp3h, across(contains("meps_mbr"), ~nbhd_smooth(.x, 7, 4))),
   sd = FALSE
@@ -919,7 +919,7 @@ can compute this by setting a binary probabilty for each grid square in the
 neighbourhood smoothed member probabilties: 1 if neighbourhood probability > 0, and 
 0 otherwise. 
 
-```{r nbhd-prob-within, message=FALSE}
+```{r nbhd-prob-within, message=FALSE, fig.width=8, fig.height=10, warning=FALSE}
 nbhd_within <- ens_stats(
   mutate(pcp3h, across(contains("meps_mbr"), ~nbhd_smooth(.x, 7, 4) > 0)),
   sd = FALSE
