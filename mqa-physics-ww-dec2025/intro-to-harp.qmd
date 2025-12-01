@@ -1,0 +1,1097 @@
+---
+title: "Introduction to harp"
+author: "Andrew Singleton"
+format: 
+  revealjs:
+    theme: [default, harp-intro.scss]
+    embed-resources: true
+    code-line-numbers: false
+---
+
+# A framewok for meteorological data analysis using R {.center-text}
+
+## Component packages
+
+::: {.fragment .highlight-current-red}
+<div style="position: absolute; top: 15%; left: 0" data-id="harpCoreCont">
+  <div data-id="harpCore">harpCore</div>
+</div>
+:::
+
+::: {.fragment .highlight-current-red}
+<div style="position: absolute; top: 25%; left: 0" data-id="harpIOCont">
+  <div data-id="harpIO">harpIO</div>
+</div>
+:::
+
+::: {.fragment .highlight-current-red}
+<div style="position: absolute; top: 35%; left: 0" data-id="harpPointCont">
+  <div data-id="harpPoint">harpPoint</div>
+</div>
+:::
+
+::: {.fragment .highlight-current-red}
+<div style="position: absolute; top: 45%; left: 0" data-id="harpSpatialCont">
+  <div data-id="harpSpatial">harpSpatial</div>
+</div>
+:::
+
+::: {.fragment .highlight-current-red}
+<div style="position: absolute; top: 55%; left: 0" data-id="harpVisCont">
+  <div data-id="harpVis">harpVis</div>
+</div>
+:::
+
+::: {.fragment .highlight-current-red}
+<div style="position: absolute; top: 65%; left: 0" data-id="harpCont">
+  <div data-id="harp">harp</div>
+</div>
+:::
+
+## Component packages {auto-animate=true}
+
+<div style="position: absolute; top: 15%; left: 0" data-id="harpCoreCont">
+  <div data-id="harpCore">harpCore</div>
+</div>
+
+<div style="position: absolute; top: 25%; left: 0" data-id="harpIOCont">
+  <div data-id="harpIO">harpIO</div>
+</div>
+
+<div style="position: absolute; top: 35%; left: 0" data-id="harpPointCont">
+  <div data-id="harpPoint">harpPoint</div>
+</div>
+
+<div style="position: absolute; top: 45%; left: 0" data-id="harpSpatialCont">
+  <div data-id="harpSpatial">harpSpatial</div>
+</div>
+
+<div style="position: absolute; top: 55%; left: 0" data-id="harpVisCont">
+  <div data-id="harpVis">harpVis</div>
+</div>
+
+<div style="position: absolute; top: 65%; left: 0" data-id="harpCont">
+  <div data-id="harp">harp</div>
+</div>
+
+## Dependency Tree {.package-layout auto-animate=true}
+
+<div style="position: absolute; top: 20%; left: 45%" data-id="harpCoreCont">
+  <div style="text-align: center;" data-id="harpCore">harpCore</div>
+</div>
+
+<div style="position: absolute; top: 50%; left: 15%" data-id="harpIOCont">
+  <div style="text-align: center;" data-id="harpIO">harpIO</div>
+</div>
+
+<div style="position: absolute; top: 50%; left: 35%" data-id="harpPointCont">
+  <div style="text-align: center;" data-id="harpPoint">harpPoint</div>
+</div>
+
+<div style="position: absolute; top: 50%; left: 55%" data-id="harpSpatialCont">
+  <div style="text-align: center;" data-id="harpSpatial">harpSpatial</div>
+</div>
+
+<div style="position: absolute; top: 50%; left: 75%" data-id="harpVisCont">
+  <div style="text-align: center;" data-id="harpVis">harpVis</div>
+</div>
+
+<div style="position: absolute; top: 80%; left: 49%" data-id="harpCont">
+  <div style="text-align: center;" data-id="harp">harp</div>
+</div>
+
+## Dependency Tree {.package-layout auto-animate=true}
+
+<div style="position: absolute; top: 20%; left: 45%" data-id="harpCoreCont">
+  <div style="text-align: center;" data-id="harpCore">harpCore</div>
+</div>
+
+<div style="position: absolute; top: 30%; bottom: 60%; left: 52%" data-id="branch1">
+  <div style="width: 1px; height: 100%; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; bottom: 60%; left: 20%; right: 20%" data-id="branch1">
+  <div style="width: 100%; height: 1px; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; top: 40%; bottom: 50%; left: 20%" data-id="branch1">
+  <div style="width: 1px; height: 100%; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; top: 40%; bottom: 50%; left: 42%" data-id="branch1">
+  <div style="width: 1px; height: 100%; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; top: 40%; bottom: 50%; left: 62%" data-id="branch1">
+  <div style="width: 1px; height: 100%; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; top: 40%; bottom: 50%; left: 80%" data-id="branch1">
+  <div style="width: 1px; height: 100%; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; top: 50%; left: 15%" data-id="harpIOCont">
+  <div style="text-align: center;" data-id="harpIO">harpIO</div>
+</div>
+
+<div style="position: absolute; top: 50%; left: 35%" data-id="harpPointCont">
+  <div style="text-align: center;" data-id="harpPoint">harpPoint</div>
+</div>
+
+<div style="position: absolute; top: 50%; left: 55%" data-id="harpSpatialCont">
+  <div style="text-align: center;" data-id="harpSpatial">harpSpatial</div>
+</div>
+
+<div style="position: absolute; top: 50%; left: 75%" data-id="harpVisCont">
+  <div style="text-align: center;" data-id="harpVis">harpVis</div>
+</div>
+
+<div style="position: absolute; top: 80%; left: 49%" data-id="harpCont">
+  <div style="text-align: center;" data-id="harp">harp</div>
+</div>
+
+## Dependency Tree {.package-layout auto-animate=true}
+
+<div style="position: absolute; top: 20%; left: 45%" data-id="harpCoreCont">
+  <div style="text-align: center;" data-id="harpCore">harpCore</div>
+</div>
+
+<div style="position: absolute; top: 30%; bottom: 60%; left: 52%" data-id="branch1">
+  <div style="width: 1px; height: 100%; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; bottom: 60%; left: 20%; right: 20%" data-id="branch1">
+  <div style="width: 100%; height: 1px; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; top: 40%; bottom: 50%; left: 20%" data-id="branch1">
+  <div style="width: 1px; height: 100%; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; top: 40%; bottom: 50%; left: 42%" data-id="branch1">
+  <div style="width: 1px; height: 100%; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; top: 40%; bottom: 50%; left: 62%" data-id="branch1">
+  <div style="width: 1px; height: 100%; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; top: 40%; bottom: 50%; left: 80%" data-id="branch1">
+  <div style="width: 1px; height: 100%; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; top: 50%; left: 15%" data-id="harpIOCont">
+  <div style="text-align: center;" data-id="harpIO">harpIO</div>
+</div>
+
+<div style="position: absolute; top: 50%; left: 35%" data-id="harpPointCont">
+  <div style="text-align: center;" data-id="harpPoint">harpPoint</div>
+</div>
+
+<div style="position: absolute; top: 50%; left: 55%" data-id="harpSpatialCont">
+  <div style="text-align: center;" data-id="harpSpatial">harpSpatial</div>
+</div>
+
+<div style="position: absolute; top: 50%; left: 75%" data-id="harpVisCont">
+  <div style="text-align: center;" data-id="harpVis">harpVis</div>
+</div>
+
+<div style="position: absolute; bottom: 30%; top: 60%; left: 20%" data-id="branch2">
+  <div style="width: 1px; height: 100%; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; bottom: 30%; top: 60%; left: 42%" data-id="branch2">
+  <div style="width: 1px; height: 100%; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; bottom: 30%; top: 60%; left: 62%" data-id="branch2">
+  <div style="width: 1px; height: 100%; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; bottom: 30%; top: 60%; left: 80%" data-id="branch2">
+  <div style="width: 1px; height: 100%; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; bottom: 30%; left: 20%; right: 20%" data-id="branch2">
+  <div style="width: 100%; height: 1px; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; bottom: 20%; top: 70%; left: 52%" data-id="branch2">
+  <div style="width: 1px; height: 100%; background: white" class=fadeIn-animation></div>
+</div>
+
+<div style="position: absolute; top: 80%; left: 49%" data-id="harpCont">
+  <div style="text-align: center;" data-id="harp">harp</div>
+</div>
+
+# Installation
+
+## Basic installation {auto-animate="true"}
+
+```{r, eval=FALSE, echo=TRUE}
+install.packages("remotes")
+```
+
+## Basic installation {auto-animate="true"}
+
+```{r, eval=FALSE, echo=TRUE}
+install.packages("remotes")
+remotes::install_github("harphub/harp")
+```
+
+## Basic installation {auto-animate="true"}
+
+```{r, eval=FALSE, echo=TRUE}
+install.packages("remotes")
+remotes::install_github("harphub/harp")
+```
+
+To avoid throttling, get a [Personal Access Token](https://happygitwithr.com/https-pat)
+
+## Basic installation {auto-animate="true"}
+
+```{r, eval=FALSE, echo=TRUE}
+install.packages("remotes")
+remotes::install_github("harphub/harp")
+```
+
+To avoid throttling, get a [Personal Access Token](https://happygitwithr.com/https-pat)
+
+To speed up, use [Posit Package Manager](https://packagemanager.posit.co/client/#/repos/cran/setup)
+
+## Dependencies - meteogrid
+
+- Projections and coordinate transformations
+- Requires `libproj-dev`
+
+## Dependencies - grib
+
+- Read grib files
+- Requires `libeccodes-dev`
+- Requires `Rgrib2`
+
+```{r eval=FALSE, echo=TRUE}
+library(remotes)
+install_github("harphub/Rgrib2")
+```
+
+## Dependencies - FA
+
+- Read FA files
+- Requires `Rfa`
+
+```{r eval=FALSE, echo=TRUE}
+library(remotes)
+install_github("harphub/Rfa")
+```
+
+## Dependencies - NetCDF
+
+- Read NetCDF files
+- Requires `libnetcdf-dev`
+- Requires `ncdf4`
+
+```{r eval=FALSE, echo=TRUE}
+install.packages("ncdf4")
+```
+
+## RStudio
+
+- IDE for R
+  - Also good for Python, JS, CSS, md & more
+- Use [JupyterHub](https://jupyterhub.ecmwf.int/) at ECMWF
+  - X11 Desktop
+  - Terminal
+  
+```{bash, eval=FALSE, echo=TRUE}
+module load R
+module load rstudio
+rstudio &
+```
+
+# Reading data
+
+## Single files
+
+- `read_grid("<file_name>", "<parameter>", ...)`
+- For a single field, returns a `geofield`
+- For multiple fields, returns a `geolist`
+- With `data_frame = TRUE`, returns a `harp_df` data frame
+
+- Doesn't know much about the data, forecast? analysis?
+
+## Single files
+
+```{r, echo=TRUE}
+library(harp)
+read_grid(
+  "data/MEPS/2025/11/01/00/member_00/meps_sfc_01_20251101T00Z.nc",
+  "T2m"
+)
+```
+
+## Single files
+
+```{r, echo=TRUE}
+read_grid(
+  "data/MEPS/2025/11/01/00/member_00/meps_sfc_01_20251101T00Z.nc",
+  c("T2m", "RH2m")
+)
+```
+
+## Single files
+
+```{r, echo=TRUE, eval=FALSE}
+read_grid(
+  "data/MEPS/2025/11/01/00/member_00/meps_sfc_01_20251101T00Z.nc",
+  c("T2m", "RH2m"), 
+  data_frame = TRUE
+)
+```
+
+```{r, echo=FALSE}
+read_grid(
+  "data/MEPS/2025/11/01/00/member_00/meps_sfc_01_20251101T00Z.nc",
+  c("T2m", "RH2m"), 
+  data_frame = TRUE
+) |> print(width = Inf)
+```
+
+## Multiple files
+- `read_forecast()`
+- `read_analysis()`
+- `read_obs()`
+- Uses templating system for file names
+
+```{r, echo=TRUE}
+meps_tmplt <- "{YYYY}/{MM}/{DD}/{HH}/member_{MBR2}/meps_sfc_{LDT2}_{YYYY}{MM}{DD}T{HH}Z.nc"
+meps_path <- "data/MEPS"
+```
+
+## Multiple files
+
+```{r, echo=TRUE, eval=FALSE}
+ens <- read_forecast(
+  seq_dttm(2025112600, 2025112700, "1d"),
+  "meps",
+  "T2m",
+  lead_time     = c(0, 3),
+  members       = c(0, 1, 2, 9, 12),
+  file_path     = meps_path,
+  file_template = meps_tmplt,
+  return_data   = TRUE 
+)
+```
+
+```{r, message=FALSE, warning=FALSE}
+ens <- read_forecast(
+  seq_dttm(2025112600, 2025112700, "1d"),
+  "meps",
+  "T2m",
+  lead_time     = c(0, 3),
+  members       = c(0, 1, 2, 9, 12),
+  file_path     = meps_path,
+  file_template = meps_tmplt,
+  return_data   = TRUE, 
+  file_format_opts = netcdf_opts("met_norway_det")
+)
+print(ens, width = Inf)
+```
+
+## Multiple files
+
+```{r, echo=TRUE, eval=FALSE}
+anl <- read_analysis(
+  seq_dttm(2025112610, 2025112614, "1h"),
+  "met_anl",
+  "precipitation_amount",
+  file_path     = "data/yr_short",
+  file_template = "{YYYY}/{MM}/{DD}/met_analysis_1_0km_nordic_{YYYY}{MM}{DD}T{HH}Z.nc",
+  file_format_opts = netcdf_opts(proj4_var = "projection_lcc")
+)
+```
+
+```{r, message=FALSE, warning=FALSE}
+anl <- read_analysis(
+  seq_dttm(2025112610, 2025112614, "1h"),
+  "met_anl",
+  "precipitation_amount",
+  file_path     = "data/yr_short",
+  file_template = "{YYYY}/{MM}/{DD}/met_analysis_1_0km_nordic_{YYYY}{MM}{DD}T{HH}Z.nc",
+  file_format_opts = netcdf_opts(proj4_var = "projection_lcc")
+)
+print(anl, width = Inf)
+```
+
+# Plotting fields
+
+## Plot method
+- Uses `ggplot()` in the background
+- ggplot is a powerful plotting package for R
+  - enables you to affect all aspects of the plot
+- Automatically facets by the `valid_dttm` column
+- Requires user to specify which column plot if more than 1 `<geolist>` column.
+
+## Precipitation analysis
+
+```{r, dev="png", dev.args=list(bg="transparent"), echo=TRUE}
+plot(anl)
+```
+
+## Precipitation analysis
+
+Using colour scale for precipitation
+
+```{r, echo=TRUE, dev="png", dev.args=list(bg="transparent")}
+plot(anl) + 
+  scale_fill_precip()
+```
+
+## Precipitation analysis
+
+Using binned colour scale for precipitation
+
+```{r, echo=TRUE, dev="png", dev.args=list(bg="transparent")}
+plot(anl) + 
+  scale_fill_precip_b()
+```
+
+## Ensembles
+
+Need to get all of members in a single column
+
+```{r, echo=TRUE}
+mbrs <- pivot_members(ens)
+```
+
+And filter to only those rows we want to plot
+
+```{r, echo=TRUE}
+library(dplyr)
+mbrs <- filter(
+  mbrs, 
+  lead_time == 0,
+  fcst_dttm == as_dttm(2025112600)
+)
+```
+
+## Ensembles
+
+Now we need to specify the column to facet by
+
+```{r, echo=TRUE, dev="png", dev.args=list(bg="transparent")}
+plot(mbrs, facet_col = member)
+```
+
+# Parameter Definitions
+
+## harp_params
+
+- Built in definitions for different file formats
+
+```{r, echo=TRUE}
+show_param_defs()
+```
+
+## harp_params
+
+```{r, echo=TRUE}
+show_param_defs("grib")
+```
+
+## Applying a function
+
+```{r, echo=TRUE}
+harp_params$ws10m
+```
+
+## Modifying and adding parameters
+
+- `modify_param_def()`
+- `add_param_def()`
+
+```{r, echo=TRUE}
+my_params = modify_param_def(
+  "pcp",
+  netcdf = new_netcdf_param("precipitation_amount")
+)
+
+read_grid(
+  "data/yr_short/2025/11/27/met_analysis_1_0km_nordic_20251127T12Z.nc",
+  "pcp",
+  param_defs = my_params,
+  file_format_opts = netcdf_opts(proj4_var = "projection_lcc")
+)
+```
+
+# Geographic Transformations
+
+## After reading
+
+- `geo_regrid()` - Interpolate between grids
+- `geo_points()` - Interpolate to point locations
+- `geo_upscale()` - Upscale to lower resolution
+- `geo_zoom()` - Zoom in on a centre point
+- `geo_subgrid()` - Extract a subgrid based on (i,j) locations
+- `geo_xsection()` - Extract a cross section between 2 points
+- `geo_reproject()` - Reproject point data
+
+## Regridding example
+
+```{r, echo=TRUE, dev="png", dev.args=list(bg="transparent")}
+geo_regrid(anl, get_domain(ens$meps_mbr000)) |> 
+  plot()
+```
+
+## At read time
+
+- Use `transformation = "<type>"` with `transformation_opts`
+- Interpolation to points is `transformation = "interpolate"`
+  - Uses built in `station_list` if nothing is specified
+  
+```{r, echo=TRUE, eval=FALSE}
+read_grid(
+  "data/MEPS/2025/11/27/00/member_00/meps_sfc_12_20251127T00Z.nc",
+  "ws10m",
+  transformation = "interpolate"
+)
+```
+
+```{r}
+read_grid(
+  "data/MEPS/2025/11/27/00/member_00/meps_sfc_12_20251127T00Z.nc",
+  "ws10m",
+  transformation = "interpolate"
+) |> print(width = Inf)
+```
+
+## Specify locations and method
+
+```{r, echo=TRUE}
+my_stations <- tribble(
+  ~SID, ~lat, ~lon, ~name,
+  1, 60.169832654, 24.938162914, "HELSINKI STATION",
+  2, 60.203844,   24.960841,     "FMI"
+)
+```
+
+  
+```{r, echo=TRUE, eval=FALSE}
+read_grid(
+  "data/MEPS/2025/11/27/00/member_00/meps_sfc_12_20251127T00Z.nc",
+  "ws10m",
+  transformation = "interpolate",
+  transformation_opts = interpolate_opts(my_stations, method = "bilinear")
+)
+```
+
+```{r}
+read_grid(
+  "data/MEPS/2025/11/27/00/member_00/meps_sfc_12_20251127T00Z.nc",
+  "ws10m",
+  transformation = "interpolate",
+  transformation_opts = interpolate_opts(my_stations, method = "bilinear")
+) |> print(width = Inf)
+```
+
+## Cross sections
+
+- `transformation = "xsection"`
+- `transformation_opts = xsection_opts(a = ..., b = ...)`
+
+```{r, echo=TRUE}
+oslo <- c(10.72, 59.9422)
+helsinki <- c(24.960841, 60.203844)
+
+xs <- read_grid(
+  "data/MEPS/2025/11/27/meps_det_2_5km_20251127T00Z.nc",
+  "caf", 
+  lead_time           = 12,
+  transformation      = "xsection",
+  transformation_opts = xsection_opts(oslo, helsinki),
+  vertical_coordinate = "model",
+  data_frame          = TRUE
+)
+```
+
+## Plotting cross sections - model levels
+
+- No specialized plot method
+- Use `ggplot()` directly
+
+## Plotting cross sections - model levels
+
+```{r, echo=TRUE, dev="png", dev.args=list(bg="transparent")}
+ggplot(xs, aes(xs = xsection_data)) + 
+  geom_xs() + 
+  scale_y_reverse()
+```
+
+## Plotting cross sections - pressure levels
+
+- Requires surface pressure to compute the pressure levels
+- By default assumes harmonie 65 levels
+
+```{r, echo=TRUE}
+xs <- read_grid(
+  "data/MEPS/2025/11/27/meps_det_2_5km_20251127T00Z.nc",
+  c("caf", "psfc"), 
+  lead_time           = 12,
+  transformation      = "xsection",
+  transformation_opts = xsection_opts(oslo, helsinki),
+  vertical_coordinate = "model",
+  data_frame          = TRUE
+)
+```
+
+And each parameter needs to be in its own column
+
+```{r, echo=TRUE}
+xs <- pivot_parameters_wider(xs, xsection_data)
+```
+
+## Plotting cross sections - pressure levels
+
+```{r, echo=TRUE, dev="png", dev.args=list(bg="transparent")}
+ggplot(xs, aes(xs = caf, psfc = psfc)) + 
+  geom_xs_pressure(interpolate = TRUE) + 
+  scale_fill_viridis_c(option = "F") +
+  scale_y_reverse() + 
+  coord_cartesian(expand = FALSE)
+```
+
+## Plotting cross sections - pressure levels
+
+```{r, echo=TRUE, eval=FALSE}
+ggplot(xs, aes(xs = caf, psfc = psfc)) + 
+  geom_xs_pressure(
+    interpolate = TRUE,
+    scale_pressure = 1 / 100,
+    scale_distance = 1 / 1000, 
+    topo_colour    = "grey",
+    topo_linewidth = 0.5
+  ) + 
+  scale_fill_viridis_c("Cloud\nFraction", option = "F") +
+  scale_y_reverse() + 
+  coord_cartesian(expand = FALSE) + 
+  labs(
+    x = "Oslo -> Helsinki [km]",
+    y = "Pressure [hPa]",
+    title = "Cloud fraction",
+    subtitle = "for a cross section between Oslo and Helsinki"
+  )
+```
+
+## Plotting cross sections - pressure levels
+
+```{r, dev="png", dev.args=list(bg="transparent")}
+ggplot(xs, aes(xs = caf, psfc = psfc)) + 
+  geom_xs_pressure(
+    interpolate    = TRUE,
+    scale_pressure = 1 / 100,
+    scale_distance = 1 / 1000, 
+    topo_colour    = "grey",
+    topo_linewidth = 0.5
+  ) + 
+  scale_fill_viridis_c("Cloud\nFraction", option = "F") +
+  scale_y_reverse() + 
+  coord_cartesian(expand = FALSE) + 
+  labs(
+    x = "Oslo -> Helsinki [km]",
+    y = "Pressure [hPa]",
+    title = "Cloud fraction",
+    subtitle = "for a cross section between Oslo and Helsinki"
+  )
+```
+
+## Plotting cross sections - height levels
+
+- Requires surface pressure, temperature, specific humidity and surface elevation
+
+```{r, echo=TRUE}
+xs <- read_grid(
+  "data/MEPS/2025/11/27/meps_det_2_5km_20251127T00Z.nc",
+  c("caf", "psfc", "sfc_geo", "T", "Q"), 
+  lead_time           = 12,
+  transformation      = "xsection",
+  transformation_opts = xsection_opts(oslo, helsinki),
+  vertical_coordinate = "model",
+  data_frame          = TRUE
+)
+```
+
+And each parameter needs to be in its own column
+
+```{r, echo=TRUE}
+xs <- pivot_parameters_wider(xs, xsection_data)
+```
+
+## Plotting cross sections - height levels
+
+```{r, echo=TRUE, dev="png", dev.args=list(bg="transparent")}
+ggplot(xs, aes(xs = caf, psfc = psfc, temp = T, spec_hum = Q, topo = sfc_geo)) + 
+  geom_xs_height(interpolate = TRUE) + 
+  scale_fill_viridis_c(option = "F") +
+  coord_cartesian(expand = FALSE)
+```
+
+## Plotting cross sections - height levels
+
+```{r, echo=TRUE, eval=FALSE}
+ggplot(xs, aes(xs = caf, psfc = psfc, temp = T, spec_hum = Q, topo = sfc_geo)) + 
+  geom_xs_height(
+    interpolate = TRUE,
+    height_lims    = c(NA, 14000),  
+    scale_distance = 1 / 1000, 
+    topo_colour    = "grey",
+    topo_linewidth = 0.5
+  ) + 
+  scale_fill_viridis_c("Cloud\nFraction", option = "F") +
+  coord_cartesian(expand = FALSE) + 
+  labs(
+    x = "Oslo -> Helsinki [km]",
+    y = "Pressure [hPa]",
+    title = "Cloud fraction",
+    subtitle = "for a cross section between Oslo and Helsinki"
+  )
+```
+
+## Plotting cross sections - height levels
+
+```{r, dev="png", dev.args=list(bg="transparent")}
+ggplot(xs, aes(xs = caf, psfc = psfc, temp = T, spec_hum = Q, topo = sfc_geo)) + 
+  geom_xs_height(
+    interpolate    = TRUE,
+    height_lims    = c(NA, 14000),  
+    scale_distance = 1 / 1000, 
+    topo_colour    = "grey",
+    topo_linewidth = 0.5
+  ) + 
+  scale_fill_viridis_c("Cloud\nFraction", option = "F") +
+  coord_cartesian(expand = FALSE) + 
+  labs(
+    x = "Oslo -> Helsinki [km]",
+    y = "Pressure [hPa]",
+    title = "Cloud fraction",
+    subtitle = "for a cross section between Oslo and Helsinki"
+  )
+```
+
+## Cross section map
+
+- Draws a line on a map showing the cross section location
+- Often needs some experimentation to get text labels right
+
+```{r, echo=TRUE, eval=FALSE}
+ggplot(xs, aes(xs = psfc)) + 
+  geom_xs_map(
+     map_fill      = "grey",
+    section_labels = c("Oslo", "Helsinki"),
+    section_label_hjust = 0.5, 
+    section_label_vjust = -0.5
+  ) +
+  theme_harp_map() + 
+  coord_equal(expand = FALSE) + 
+  theme(panel.background = element_rect(fill = "skyblue"))
+```
+
+## Cross section map
+
+```{r, dev="png", dev.args=list(bg="transparent")}
+ggplot(xs, aes(xs = psfc)) + 
+  geom_xs_map(
+     map_fill      = "grey",
+    section_labels = c("Oslo", "Helsinki"),
+    section_label_hjust = 0.5, 
+    section_label_vjust = -0.5
+  ) +
+  theme_harp_map() + 
+  coord_equal(expand = FALSE) + 
+  theme(panel.background = element_rect(fill = "skyblue"))
+```
+
+# Point Verification
+
+## Preparing forecasts
+
+- Use `read_forecast(..., transformation = "interpolate")`
+- Set `parameter = NULL` for vfld files
+- Set `output_file_opts = fctable_opts(path)`
+  - Outputs as SQLite, one file per parameter, per month, per cycle
+
+## Preparing forecasts
+
+- Set `output_file_opts = fcparquet_opts(path)`
+  - Outputs dataset of parquet files
+  - Uses "hive partitioning"
+  - One partition per parameter and model run
+  - _Experimental_
+  - Might be slow on Atos due to file system
+  
+## Preparing observations
+
+- Use `read_obs(...)`
+- Only works for _vobs_ and _obsoul_ files
+  - Local readers: _FROST_ at MET Norway
+- Set `output_file_opts = obstable_opts(path)`
+  - Outputs as SQLite, one file per year
+
+## Preparing observations
+
+- Set `output_file_opts = obsparquet_opts(path)`
+  - Outputs dataset of parquet files
+  - Uses "hive partitioning"
+  - One partition day
+  - _Experimental_
+  - Might be slow on Atos due to file system
+ 
+## Read point forecasts
+
+- `fcst <- read_point_forecast(...)`
+- Need to set date-times, model (experiment) name(s), parameter & path
+- Defaults to lead times 0 - 48h, by 3h
+- Can set which station IDs to read
+- Automatic decumulation of accumumlated parameters
+
+## Read point obseravations
+
+- `obs <- read_point_obs(...)`
+- Can get date-times and stations from forecast
+  - `unique_valid_dttm(fcst)`
+  - `unique_stations(fcst)`
+- Can set gross error bounds
+  - `min_allowed`
+  - `max_allowed`
+
+## Get ready to verify
+
+- If more than one model, select only the common cases
+  - `common_cases()`
+- Join the observations to the forecasts
+  - `fcst <- join_to_fcst(fcst, obs)`
+  - Matches time and location
+  - Checks for same units
+- Representativeness error check
+  - `check_obs_against_fcst()`
+  
+## Verify
+
+- `ens_verify(fcst, obs_col)`
+- `det_verify(fcst, obs_col)`
+- Add thresholds to get threshold passing scores
+- Set comparator for direction of threshold passing
+  - Can also use 2 thresholds to define classes
+- Define `groupings` for how to aggregate scores
+  - Defaults to lead time
+
+
+## Verification aggregation by groups
+
+- Time groups should generally be in every group
+  - Use `make_verif_groups()` for easier definition
+  - Can also be used to set (e.g.) `p` for upper air
+- Use `join_multi_groups()` to prepare data for (e.g.) station groups
+  - Takes care of cases where stations are in multiple groups
+
+## Example - read forecast
+
+```{r, echo=TRUE}
+fcst <- read_point_forecast(
+  seq_dttm(2025100100, 2025100718, "6h"),
+  c("MEPS", "IFS_hires"),
+  "T2m",
+  file_path = "data/point_data/FCTABLE",
+)
+
+fcst <- common_cases(fcst)
+```
+
+## Example - read observations
+
+```{r, echo=TRUE}
+obs <- read_point_obs(
+  unique_valid_dttm(fcst), 
+  "T2m",
+  stations  = unique_stations(fcst),
+  file_path = "data/point_data/OBSTABLE" 
+)
+```
+## Example - scale to degrees C
+
+```{r, echo = TRUE}
+fcst <- scale_param(fcst, -273.15, "degC")
+
+obs <- scale_param(obs, -273.15, "degC", col = T2m)
+```
+
+## Examlple - join & representativeness errors
+
+```{r, echo=TRUE}
+fcst <- join_to_fcst(fcst, obs)
+
+fcst <- check_obs_against_fcst(fcst, T2m)
+```
+
+## Example - verify
+
+```{r, echo=TRUE}
+verif <- det_verify(
+  fcst, 
+  T2m,
+  thresholds = seq(-25, 10, 5)
+)
+```
+
+## Plot score
+
+- use `plot_point_verif()`
+
+```{r, echo=TRUE, dev="png", dev.args=list(bg="transparent")}
+plot_point_verif(verif, bias_rmse)
+```
+
+## Plot threshold score
+
+```{r, echo=TRUE, dev="png", dev.args=list(bg="transparent")}
+plot_point_verif(
+  verif, 
+  equitable_threat_score, 
+  facet_by = vars(threshold)
+)
+```
+
+## Plot using `score_lookup()`
+
+```{r, echo=TRUE, dev="png", dev.args=list(bg="transparent")}
+fb <- score_lookup("fb")
+plot_point_verif(
+  verif, 
+  {{fb}},
+  filter_by = vars(threshold == "ge_10")
+)
+```
+
+## Use the visualization app
+
+- First save the data
+
+```{r, echo=TRUE}
+save_point_verif(verif, "data/verification/basic")
+```
+
+- Then run the app
+
+```{r, echo=TRUE, eval=FALSE}
+shiny_plot_point_verif(
+  file.path(getwd(), "data/verification"), 
+  FALSE, "light"
+)
+```
+
+## More complicated groupings
+
+```{r, echo=TRUE}
+my_groups <- make_verif_groups(
+  time_groups = c("lead_time", "valid_dttm", "valid_hour"),
+  groups = c("fcst_cycle", "station_group")
+)
+
+fcst <- expand_date(fcst, valid_dttm)
+fcst <- join_multi_groups(fcst, station_groups)
+```
+
+## More complicated groupings
+
+```{r, echo=TRUE}
+verif <- det_verify(
+  fcst, 
+  T2m, 
+  groupings = my_groups
+)
+```
+
+- More difficult to plot; better to use the app
+
+```{r, echo=TRUE}
+save_point_verif(verif, "data/verification/grouped")
+```
+
+# And now the quick way
+
+## Everything in (almost) one function
+
+```{r, echo=TRUE}
+params <- c(
+  make_verif_param(
+    "2m temp",
+    fcst_param       = "T2m",
+    fcst_scaling     = make_scaling(-273.15, "degC"),
+    obs_param        = "T2m",
+    obs_scaling      = make_scaling(-273.15, "degC"),
+    verif_comparator = c("ge", "between"),
+    verif_thresholds = list(seq(-20, 10, 5), c(-Inf, seq(-20, 10, 5), Inf))
+  ),
+  make_verif_param(
+    "2m spec hum",
+    fcst_param       = "Q2m",
+    fcst_scaling     = make_scaling(1000, "g/kg", TRUE),
+    obs_param        = "Q2m",
+    obs_scaling      = make_scaling(1000, "g/kg", TRUE),
+    verif_thresholds = seq(10, 16, 2)
+  ),
+  make_verif_param(
+    "10m wind speed",
+    fcst_param       = "S10m",
+    obs_param        = "S10m",
+    verif_comparator = c("ge", "between"),
+    verif_thresholds = list(seq(2, 10, 2), c(0, seq(2, 10, 2), Inf))
+  )
+)
+```
+
+## Everything in (almost) one function
+
+```{r, echo=TRUE}
+run_point_verif(
+  seq_dttm(2025100100, 2025100718, "6h"),
+  c("MEPS", "IFS_hires"),
+  params,
+  main_fcst_model      = "MEPS",
+  dttm_rounding        = "1d",
+  dttm_rounding_offset = "12h",
+  fcst_path            = "data/point_data/FCTABLE",
+  obs_path             = "data/point_data/OBSTABLE",
+  out_path             = "data/verification/quick",
+  defaults             = make_verif_defaults(
+    verif_groups = make_verif_groups(
+      c("lead_time", "valid_dttm", "valid_hour"),
+      "fcst_cycle"
+    )
+  ) 
+)
+```
+
+# An even easier way
+
+```{r, echo=TRUE, eval=FALSE}
+new_point_verif_project("<dir>")
+```
+
+Creates:
+
+- a params file
+- a config file
+- a script to be run with Rscript
+
+# There's a lot more!
+
+## Links
+
+[harp Training 2024](https://harphub.github.io/harp_training_2024/)
+
+[Recent examples](https://andrew-met.github.io/harp_presentations/harp-accord-eps-ww-oct-2025-demos.html)
+
+[R for data science](https://r4ds.hadley.nz/)
+
+[ggplot2](https://ggplot2-book.org/)
+
